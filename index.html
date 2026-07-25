@@ -1,272 +1,409 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>BonSekolah by MZW Digital</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c96b00">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="BonSekolah">
-<link rel="apple-touch-icon" href="icon-192.png">
-<style>
-:root{
-  --bg:#f4f6f8;--card:#ffffff;--soft:#f8fafc;--line:#e5e7eb;--text:#111827;--muted:#6b7280;
-  --pri:#b96a12;--pri2:#9a560b;--ok:#15803d;--okbg:#eaf7ee;--bl:#2563eb;--blbg:#edf4ff;
-  --or:#b45309;--orbg:#fff4e5;--er:#dc2626;--erbg:#feecec;--radius:12px;
-}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
-button,input,select,textarea{font:inherit;color:inherit}img{max-width:100%;display:block}button{cursor:pointer}a{text-decoration:none}.hidden{display:none!important}
-.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
-.topin{max-width:920px;margin:auto;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.8rem}
-.brand{display:flex;align-items:center;gap:.75rem;min-width:0}.logo,.pin-logo{width:42px;height:42px;border-radius:12px;background:var(--pri);display:grid;place-items:center;color:#fff;flex:0 0 auto}
-.t1{font-size:1rem;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.t2{font-size:.82rem;color:var(--muted)}
-.wrap{max-width:920px;margin:auto;padding:1rem 1rem 5rem}
-.note,.card,.sheet,.input,.sel,.fg input,.fg select,.fg textarea,.tbl,.photo-box,.lock-card,.limit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
-.note{padding:1rem;margin-bottom:1rem}.note strong{display:block;margin-bottom:.2rem;font-size:.96rem}.mini,.small,.hint,.last,.footer{font-size:.8rem;color:var(--muted)}
-.actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6rem;margin-bottom:1rem}.btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:10px;padding:.78rem .95rem;min-height:44px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;text-align:center}.bp{background:var(--pri);border-color:var(--pri);color:#fff}.bp:hover{background:var(--pri2)}.bg:hover{background:var(--soft)}.bd{background:var(--erbg);border-color:#fecaca;color:var(--er)}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin-bottom:1rem}.stat{padding:.95rem}.sl{font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:.15rem}.sv{font-size:1.08rem;font-weight:800;letter-spacing:-.01em}
-.bar{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:.6rem;margin-bottom:1rem}.search{min-width:0}.input,.sel,.fg input,.fg select,.fg textarea{width:100%;padding:.78rem .86rem;border:1px solid var(--line);background:#fff;border-radius:10px;outline:none}.fg input:focus,.fg select:focus,.fg textarea:focus,.input:focus,.sel:focus{border-color:#d1a05d}.fg textarea{min-height:110px;resize:vertical}
-.list{display:grid;gap:.75rem}.item{overflow:hidden}.itembtn{all:unset;display:block;cursor:pointer;width:100%}.itemin{display:grid;grid-template-columns:70px minmax(0,1fr);gap:.85rem;padding:.85rem}.ph,.bigph{background:#efe8de;border-radius:12px;overflow:hidden;display:grid;place-items:center;color:#8b8174}.ph{width:70px;height:70px;font-size:1.6rem}.bigph{width:90px;height:90px;font-size:2rem}.ph img,.bigph img,.preview{width:100%;height:100%;object-fit:cover}.nm{font-size:1rem;font-weight:800;letter-spacing:-.01em}.meta{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 .35rem}.pill{padding:.18rem .48rem;border-radius:999px;font-size:.68rem;font-weight:800}.pk{background:#f8e5d3;color:var(--pri)}.sg{background:var(--okbg);color:var(--ok)}.sb{background:var(--blbg);color:var(--bl)}.so{background:var(--orbg);color:var(--or)}.sr{background:var(--erbg);color:var(--er)}.last{margin-bottom:.45rem}.prog{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;align-items:center}.track{height:7px;background:#ece7df;border-radius:999px;overflow:hidden}.fill{height:100%;border-radius:999px}.amt{font-size:.8rem;font-weight:800;white-space:nowrap}.cg{border-color:#cae7d5}.cb{border-color:#d9e6ff}.co{border-color:#ffe1bc}.cr{border-color:#fecaca}.empty{padding:2.2rem 1rem;text-align:center;color:var(--muted)}
-.modal{position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;align-items:flex-end;justify-content:center;z-index:55}.modal.open{display:flex}.sheet{width:100%;max-width:760px;max-height:92dvh;overflow:auto;padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}.handle{width:40px;height:4px;border-radius:999px;background:#d1d5db;margin:0 auto .9rem}.mh{font-size:1.08rem;font-weight:800;margin-bottom:.9rem;letter-spacing:-.01em}.form{display:grid;gap:.8rem}.two{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.fg label{display:block;font-size:.78rem;font-weight:700;margin-bottom:.3rem;color:#374151}.sec{padding:.95rem;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.sec h3{margin:.05rem 0 .7rem;font-size:.93rem;font-weight:800}.row,.photo-row{display:flex;gap:.6rem;flex-wrap:wrap}.row .btn{flex:1}.photo-half{flex:1;min-width:0}.photo-box{padding:.85rem;text-align:center;background:#fff}.photo-btn{width:100%}.preview{width:102px;height:102px;border-radius:12px;margin:.6rem auto 0;background:#ede6dc}
-.detailhead{display:grid;grid-template-columns:90px minmax(0,1fr);gap:.85rem;margin-bottom:1rem;align-items:center}.limit{padding:.9rem;margin-bottom:.9rem}.limitline{display:flex;justify-content:space-between;gap:.6rem;font-size:.82rem;margin-bottom:.45rem}.tbl{width:100%;border-collapse:collapse;overflow:hidden}.tbl th,.tbl td{padding:.56rem;border-bottom:1px solid var(--line);text-align:left;font-size:.77rem;background:#fff}.tbl th{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.tbl tr:last-child td{border-bottom:none}.tp{color:var(--er);font-weight:800}.tb{color:var(--ok);font-weight:800}.paybox{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;margin:.95rem 0}
-.toast{position:fixed;top:.85rem;left:.85rem;right:.85rem;display:grid;place-items:center;pointer-events:none;z-index:70}.toast div{background:#111827;color:#fff;padding:.74rem .95rem;border-radius:10px;font-weight:700;max-width:420px;text-align:center}
-.pin-shell{min-height:100dvh;display:grid;place-items:center;padding:1rem;background:var(--bg)}.lock-card{width:min(420px,100%);padding:1.1rem}.pin-logo{margin:0 auto .8rem}.pin-title{text-align:center;font-size:1.08rem;font-weight:800;letter-spacing:-.01em}.pin-sub{text-align:center;color:var(--muted);font-size:.83rem;margin:.25rem 0 1rem}.pin-dots{display:flex;justify-content:center;gap:.5rem;margin:.85rem 0 1rem}.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--pri);background:#fff}.dot.on{background:var(--pri)}.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem}.pin-key{border:1px solid var(--line);border-radius:12px;background:#fff;padding:.95rem 0;font-weight:800;font-size:1rem}
-.footer{text-align:center;padding:1.75rem 1rem 2.1rem;font-weight:700}.footer a{color:inherit;-webkit-tap-highlight-color:transparent}
-@media (max-width:760px){.topin,.wrap{padding-left:.85rem;padding-right:.85rem}.actions{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bar,.two,.detailhead,.paybox{grid-template-columns:1fr}.itemin{grid-template-columns:58px minmax(0,1fr);gap:.75rem}.ph{width:58px;height:58px}.bigph{width:82px;height:82px}}
-@media (max-width:420px){.actions{grid-template-columns:1fr 1fr}.btn{padding:.72rem .8rem;font-size:.94rem}.sheet{padding:.95rem .9rem calc(.95rem + env(safe-area-inset-bottom))}}
-</style>
-</head>
-<body>
-<div id="lockScreen" class="pin-shell hidden">
-  <div class="lock-card">
-    <div class="pin-logo">🔒</div>
-    <div class="pin-title">BonSekolah by MZW Digital</div>
-    <div class="pin-sub" id="lockSub">Masukkan PIN untuk membuka aplikasi</div>
-    <div class="pin-dots"><div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div><div class="dot" id="d4"></div><div class="dot hidden" id="d5"></div><div class="dot hidden" id="d6"></div></div>
-    <div class="pin-pad">
-      <button class="pin-key" onclick="pinTap('1')">1</button><button class="pin-key" onclick="pinTap('2')">2</button><button class="pin-key" onclick="pinTap('3')">3</button>
-      <button class="pin-key" onclick="pinTap('4')">4</button><button class="pin-key" onclick="pinTap('5')">5</button><button class="pin-key" onclick="pinTap('6')">6</button>
-      <button class="pin-key" onclick="pinTap('7')">7</button><button class="pin-key" onclick="pinTap('8')">8</button><button class="pin-key" onclick="pinTap('9')">9</button>
-      <button class="pin-key" onclick="pinClear()">←</button><button class="pin-key" onclick="pinTap('0')">0</button><button class="pin-key" onclick="toast('Reset PIN dari Pengaturan')">?</button>
-    </div>
-    <div class="small" style="margin-top:.8rem;text-align:center">PIN sederhana untuk akses cepat dan aman.</div>
-  </div>
-</div>
+cat << 'EOF' > tes.py
+import json
+import os
+import re
+import subprocess
+import time
+import threading
+from datetime import datetime
+import requests
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
-<div id="appShell" class="hidden">
-<header class="top"><div class="topin"><div class="brand"><div class="logo">📒</div><div><div class="t1">BonSekolah by MZW Digital</div><div class="t2" id="shopTitle">Warung Sekolah</div></div></div></div></header>
-<div class="toast" id="toast"></div>
-<main class="wrap">
-  <div class="note" id="statusBox"><strong>Mode Offline (Termux Tidak Aktif)</strong><div class="mini" id="statusText">Menampilkan data cadangan terakhir di HP.</div></div>
-  <div class="actions">
-    <button class="btn bg" onclick="openSettings()" >Pengaturan</button>
-    <button class="btn bg" onclick="shareSummary()">Bagikan Ringkasan</button>
-    <button class="btn bg" onclick="lockNow()">Kunci App</button>
-    <button class="btn bp" onclick="openAdd()">+ Tambah Peminjam</button>
-  </div>
-  <div class="stats">
-    <div class="card stat"><div class="sl">Total anak</div><div class="sv" id="s1">0</div></div>
-    <div class="card stat"><div class="sl">Belum lunas</div><div class="sv" id="s2">0</div></div>
-    <div class="card stat"><div class="sl">Aktivitas hari ini</div><div class="sv" id="s3">0</div></div>
-    <div class="card stat"><div class="sl">Total piutang</div><div class="sv" id="s4">Rp 0</div></div>
-  </div>
-  <div class="bar"><div class="search"><input class="input" id="q" placeholder="Cari nama siswa..." oninput="render()"></div><div style="width:180px"><select class="sel" id="kelasFilter" onchange="render()"></select></div></div>
-  <div class="card" style="padding:.8rem .9rem;margin-bottom:.75rem"><div style="font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Daftar peminjam</div><div class="small" style="margin-top:.18rem">Urut otomatis berdasarkan status hutang/saldo dan aktivitas terbaru.</div></div><div id="list" class="list"></div>
-  <div class="footer">📒 BonSekolah &nbsp;·&nbsp; by <a href="https://t.me/mzwdigital" target="_blank" rel="noopener">MZW Digital</a></div>
-</main>
-</div>
+# ==========================================
+# KONFIGURASI API & FILE
+# ==========================================
+def get_api_key():
+    if os.path.exists("api_key.txt"):
+        with open("api_key.txt", "r") as f:
+            key = f.read().strip()
+            if key and "PASTE" not in key:
+                return key
+    print("❌ API Key Groq belum diisi di api_key.txt!")
+    exit(1)
 
-<div class="modal" id="mForm"><div class="sheet"><div class="handle"></div><div class="mh" id="formTitle" >Tambah Peminjam</div><form class="form" id="formMain">
-<input type="file" accept="image/*" capture="environment" id="fotoCamera" hidden><input type="file" accept="image/*" id="fotoGallery" hidden>
-<div class="photo-row"><div class="photo-half"><div class="photo-box"><button type="button" class="btn bg photo-btn" onclick="pickCamera()">Ambil Foto</button><div class="hint" style="margin-top:.45rem">Buka kamera HP</div></div></div><div class="photo-half"><div class="photo-box"><button type="button" class="btn bg photo-btn" onclick="pickGallery()">Pilih Foto</button><div class="hint" style="margin-top:.45rem">Pilih dari galeri</div></div></div></div>
-<img id="fotoPrev" class="preview hidden" alt="Preview foto">
-<div class="two"><div class="fg"><label>Nama anak</label><input id="nama" required></div><div class="fg"><label>Kelas</label><select id="kelas" required></select></div></div>
-<div id="firstLoanBlock"><div class="two"><div class="fg"><label>Barang pinjaman</label><input id="barang" placeholder="Es, snack, dll"></div><div class="fg"><label>Harga</label><input id="harga" type="number" min="1" placeholder="2000"></div></div><div class="small">Isi pinjaman awal saat membuat data baru.</div></div>
-<div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="closeModal('mForm')">Batal</button><button type="submit" class="btn bp">Simpan</button></div>
-</form></div></div>
+GROQ_API_KEY = get_api_key()
+KASBON_FILE = "kasbon.json"
+AUDIO_M4A = "rekaman.m4a"
+REPLY_MP3 = "reply.mp3"
+VOICE_NAME = "id-ID-ArdiNeural"
 
-<div class="modal" id="mDetail"><div class="sheet" id="detailBody"></div></div>
+konteks_aktif = {"nama_siswa": None, "aksi": None}
 
-<div class="modal" id="mSettings"><div class="sheet"><div class="handle"></div><div class="mh" >Pengaturan</div><form class="form" id="settingsForm">
-  <div class="sec"><h3>Umum</h3><div class="fg"><label>Nama warung</label><input id="setShopName" placeholder="Warung Sekolah"></div></div>
-  <div class="sec"><h3>Keamanan</h3><div class="two"><div class="fg"><label>PIN aplikasi</label><input id="setPin" inputmode="numeric" maxlength="6" placeholder="4 atau 6 digit"></div><div class="fg"><label>Ulangi PIN</label><input id="setPin2" inputmode="numeric" maxlength="6" placeholder="Ulangi PIN"></div></div><div class="fg"><label>Kunci aplikasi dengan PIN</label><select id="setLockEnabled"><option value="yes">Ya</option><option value="no">Tidak</option></select></div></div>
-  <div class="sec"><h3>Backup & Import</h3><div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="downloadBackup()">Backup JSON</button><button type="button" class="btn bg" onclick="document.getElementById('importJson').click()">Import JSON</button><input id="importJson" type="file" accept="application/json" hidden></div><div class="small" style="margin-top:.55rem">Lakukan backup berkala agar data aman.</div></div>
-  <div class="sec"><h3>Custom</h3><div class="two"><div class="fg"><label>Warna utama</label><select id="setTheme"><option value="orange">Oranye hangat</option><option value="blue">Biru sekolah</option><option value="green">Hijau segar</option><option value="purple">Ungu lembut</option></select></div><div class="fg"><label>Limit hutang per anak</label><input id="setLimit" type="number" min="1000" step="500"></div></div><div class="fg"><label>Preset kelas</label><select id="presetClasses"><option value="">Pilih preset</option><option value="sd">SD: 1A-6B</option><option value="smp">SMP: 7A-9C</option><option value="sma">SMA: 10 IPA/IPS - 12 IPA/IPS</option></select></div><div class="fg"><label>Daftar kelas</label><textarea id="setClasses" placeholder="Satu kelas per baris atau pisah koma"></textarea></div></div>
-  <div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="closeModal('mSettings')">Tutup</button><button type="submit" class="btn bp">Simpan Pengaturan</button></div>
-</form></div></div>
+# ==========================================
+# LOCAL API SERVER (UNTUK WEBVIEW)
+# ==========================================
+app = Flask(__name__)
+CORS(app)
 
-<canvas id="cv" hidden></canvas>
-<script>
-const STATE_KEY='main';
-let state=null, rows=[], settings={}, security={}, currentPhoto=null, editingId=null, currentId=null, enteredPin='', unlocked=false, isTermuxOnline=false;
-function defaultClasses(){return ['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya']}
-function defaultSettings(){return {shopName:'Warung Sekolah',limit:5000,classes:defaultClasses(),theme:'orange'}}
-function defaultSecurity(){return {lockEnabled:false,pin:''}}
-function defaultState(){return {settings:defaultSettings(),security:defaultSecurity(),items:[],meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}}
-function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div>'+msg+'</div>';setTimeout(()=>t.innerHTML='',2400)}
-function esc(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
-function fmt(ts){const d=new Date(ts);const t=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});return t+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-
-function getNetBalance(p){ return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0); }
-function sumDebt(p){ const net = getNetBalance(p); return net < 0 ? -net : 0; }
-function getSaldo(p){ const net = getNetBalance(p); return net > 0 ? net : 0; }
-
-function outstandingLots(p){const lots=[];for(const t of (p.trx||[]).sort((a,b)=>a.ts-b.ts)){if(t.type==='loan') lots.push({ts:t.ts,remain:t.amount}); else {let pay=t.amount; for(const lot of lots){if(pay<=0) break; const used=Math.min(pay,lot.remain); lot.remain-=used; pay-=used;}}}return lots.filter(x=>x.remain>0)}
-function oldestOutstandingTs(p){const lots=outstandingLots(p);return lots.length?Math.min(...lots.map(x=>x.ts)):Infinity}
-function statusOf(p){
-  const net = getNetBalance(p);
-  if(net > 0) return {c:'cb',p:'sb',f:'var(--bl)',text:'Saldo Ada'};
-  if(net === 0) return {c:'cg',p:'sg',f:'var(--ok)',text:'Lunas'};
-  const oldest=outstandingLots(p)[0];
-  const days=Math.floor((Date.now()-(oldest?oldest.ts:Date.now()))/86400000);
-  if(days<3) return {c:'cb',p:'sb',f:'var(--bl)',text:days===0?'Hari ini':'1-2 hari'};
-  if(days<6) return {c:'co',p:'so',f:'var(--or)',text:'3-5 hari'};
-  return {c:'cr',p:'sr',f:'var(--er)',text:'6+ hari'};
-}
-function currentLimit(){return Math.max(1000,Number(settings.limit||5000))}
-function transactionsToday(){const start=new Date(); start.setHours(0,0,0,0); let n=0; for(const p of rows){for(const t of (p.trx||[])){if(t.ts>=start.getTime()) n++}} return n}
-function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
-function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
-for(const id of ['mForm','mDetail','mSettings']) document.getElementById(id).onclick=e=>{if(e.target.id===id) closeModal(id)}
-
-// SINKRONISASI PINTAR (TERMUX & LOCAL STORAGE)
-async function dbGet(key){
-    try {
-        const res = await fetch('http://localhost:5000/api/data', { signal: AbortSignal.timeout(1500) });
-        if(res.ok) {
-            const data = await res.json();
-            isTermuxOnline = true;
-            localStorage.setItem('bonsekolah_cache', JSON.stringify(data)); // Simpan cadangan di HP
-            return data;
+def load_raw_db():
+    if not os.path.exists(KASBON_FILE):
+        return {
+            "settings": {"shopName": "Warung Sekolah", "limit": 5000, "classes": ["1A","1B","2A","2B","3A","3B","4A","4B","5A","5B","6A","6B","Lainnya"], "theme": "orange"},
+            "security": {"lockEnabled": False, "pin": ""},
+            "items": [],
+            "catalog": [
+                {"id": "1", "name": "Es Krim", "price": 1000, "variants": "Coklat, Stroberi, Taro, Alpukat"},
+                {"id": "2", "name": "Pop Ice", "price": 3000, "variants": "Coklat, Vanilla, Mangga"}
+            ],
+            "meta": {"app": "BonSekolah by MZW Digital", "version": 6, "updatedAt": int(time.time()*1000)}
         }
-    } catch(e) {}
+    try:
+        with open(KASBON_FILE, "r") as f:
+            db = json.load(f)
+            if "catalog" not in db:
+                db["catalog"] = [
+                    {"id": "1", "name": "Es Krim", "price": 1000, "variants": "Coklat, Stroberi, Taro, Alpukat"}
+                ]
+            return db
+    except Exception:
+        return {}
+
+def save_raw_db(data):
+    with open(KASBON_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+@app.route('/api/data', methods=['GET'])
+def get_data():
+    return jsonify(load_raw_db())
+
+@app.route('/api/data', methods=['POST'])
+def set_data():
+    try:
+        data = request.json
+        save_raw_db(data)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+def run_flask():
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    try:
+        app.run(host='0.0.0.0', port=5000, debug=False)
+    except Exception:
+        pass
+
+# ==========================================
+# HELPER TEKS & PARSING NOMINAL UANG
+# ==========================================
+def bersihkan_teks(teks):
+    return re.sub(r'[^a-zA-Z0-9]', '', teks.lower())
+
+def ekstrak_angka_nominal(teks):
+    teks_lower = teks.lower()
+    teks_lower = re.sub(r'(\d+)\s*ribu', lambda m: str(int(m.group(1)) * 1000), teks_lower)
+    teks_lower = re.sub(r'(\d+)\.(\d+)', r'\1\2', teks_lower)
+    teks_tanpa_kelas = re.sub(r'\bkelas\s*\d+[a-z]?\b|\bkelas\s*\d+\b', '', teks_lower)
+    teks_tanpa_kelas = re.sub(r'\b[1-9]\d?[a-z]\b', '', teks_tanpa_kelas)
+    angka_list = re.findall(r'\d+', teks_tanpa_kelas)
     
-    // Jika Termux Mati, ambil dari Cadangan HP!
-    isTermuxOnline = false;
-    const localData = localStorage.getItem('bonsekolah_cache');
-    if(localData) {
-        try { return JSON.parse(localData); } catch(e){}
-    }
-    return null;
-}
+    if angka_list:
+        for num in reversed(angka_list):
+            val = int(num)
+            if val >= 100:
+                return val
+        return int(angka_list[-1])
+    return 0
 
-async function dbSet(key,val){
-    localStorage.setItem('bonsekolah_cache', JSON.stringify(val)); // Simpan di HP dulu
-    try {
-        await fetch('http://localhost:5000/api/data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(val)
-        });
-    } catch(e) {
-        toast("Offline: Tersimpan di memori HP (Termux mati)");
-    }
-}
+def generate_uid():
+    return hex(int(time.time() * 1000))[2:]
 
-function normalizeImported(parsed){const base=defaultState(); const s=parsed.settings||{}; const sec=parsed.security||{}; const classesRaw=s.classes||parsed.classes||base.settings.classes; const classes=Array.isArray(classesRaw)?classesRaw.filter(Boolean):String(classesRaw||'').split(/[\n,]/).map(x=>x.trim()).filter(Boolean); return {settings:{shopName:s.shopName||base.settings.shopName,limit:Math.max(1000,Number(s.limit||base.settings.limit)),classes:classes.length?classes:base.settings.classes,theme:s.theme||base.settings.theme},security:{lockEnabled:!!sec.lockEnabled,pin:String(sec.pin||'')},items:Array.isArray(parsed.items)?parsed.items:[],meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}}
-async function loadState(){try{const saved=await dbGet(STATE_KEY); state=saved?normalizeImported(saved):defaultState(); settings=state.settings; security=state.security; rows=Array.isArray(state.items)?state.items:[];}catch(e){console.error(e); state=defaultState(); settings=state.settings; security=state.security; rows=[];} syncSettingsUI(); populateClassSelects(); applyBrand(); render(); initLock()}
-async function saveState(){state={settings,security,items:rows,meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}; await dbSet(STATE_KEY,state)}
-async function persist(msg='Tersimpan'){await saveState();applyBrand();render(); if(msg) toast(msg)}
-function applyTheme(){const m={orange:['#c96b00','#a55600'],blue:['#2265d8','#184ba1'],green:['#2e8b57','#20633d'],purple:['#8257d7','#6240ab']}[settings.theme||'orange']; document.documentElement.style.setProperty('--pri',m[0]); document.documentElement.style.setProperty('--pri2',m[1])}
+def hitung_status_pembeli(pembeli):
+    net = sum(t["amount"] if t["type"] == "pay" else -t["amount"] for t in pembeli.get("trx", []))
+    if net > 0:
+        return 0, net
+    elif net < 0:
+        return -net, 0
+    else:
+        return 0, 0
 
-function applyBrand(){
-  applyTheme(); 
-  document.title='BonSekolah by MZW Digital'; 
-  document.getElementById('shopTitle').textContent=settings.shopName||'Warung Sekolah'; 
-  document.getElementById('lockSub').textContent='Masukkan PIN untuk membuka '+(settings.shopName||'aplikasi');
-  
-  const box = document.getElementById('statusBox');
-  const txt = document.getElementById('statusText');
-  if(isTermuxOnline) {
-    box.style.background = '#eaf7ee';
-    box.style.borderColor = '#cae7d5';
-    box.innerHTML = '<strong>Terhubung ke AI Termux</strong><div class="mini" style="color:#15803d">Data tersinkronisasi otomatis dengan AI lokal.</div>';
-  } else {
-    box.style.background = '#fff4e5';
-    box.style.borderColor = '#ffe1bc';
-    box.innerHTML = '<strong>Mode Offline (Termux Tidak Aktif)</strong><div class="mini" style="color:#b45309">Menampilkan data cadangan terakhir di HP.</div>';
-  }
-}
+# ==========================================
+# SISTEM SUARA (EDGE-TTS + GROQ WHISPER)
+# ==========================================
+def bicara_kakak(teks):
+    print(f"\n🌸 Kakak: {teks}\n")
+    if os.path.exists(REPLY_MP3):
+        os.remove(REPLY_MP3)
+    try:
+        subprocess.run(
+            ["edge-tts", "--voice", VOICE_NAME, "--rate=+10%", "--text", teks, "--write-media", REPLY_MP3],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25
+        )
+        if os.path.exists(REPLY_MP3) and os.path.getsize(REPLY_MP3) > 0:
+            subprocess.run(["mpv", "--no-terminal", REPLY_MP3], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return
+    except Exception:
+        pass
+    subprocess.run(["termux-tts-speak", "-l", "id", "-n", "ID", teks])
 
-function populateClassSelects(){const classes=(settings.classes||defaultClasses()).filter(Boolean); document.getElementById('kelas').innerHTML='<option value="">Pilih</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join(''); document.getElementById('kelasFilter').innerHTML='<option value="">Semua kelas</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join('')}
-function syncSettingsUI(){document.getElementById('setShopName').value=settings.shopName||''; document.getElementById('setLimit').value=currentLimit(); document.getElementById('setClasses').value=(settings.classes||defaultClasses()).join('\n'); document.getElementById('setTheme').value=settings.theme||'orange'; document.getElementById('setPin').value=''; document.getElementById('setPin2').value=''; document.getElementById('setLockEnabled').value=security.lockEnabled?'yes':'no'}
-function filtered(){const q=document.getElementById('q').value.toLowerCase().trim(); const k=document.getElementById('kelasFilter').value; return rows.filter(r=>(!q||r.name.toLowerCase().includes(q))&&(!k||r.className===k)).sort((a,b)=>{const da=sumDebt(a), db=sumDebt(b); if(da>0&&db>0) return oldestOutstandingTs(a)-oldestOutstandingTs(b); if(da>0&&db<=0) return -1; if(da<=0&&db>0) return 1; const la=(a.trx&&a.trx.length)?Math.max(...a.trx.map(t=>t.ts)):a.createdAt; const lb=(b.trx&&b.trx.length)?Math.max(...b.trx.map(t=>t.ts)):b.createdAt; return lb-la})}
-
-function render(){
-  applyBrand(); 
-  document.getElementById('s1').textContent=rows.length; 
-  document.getElementById('s2').textContent=rows.filter(x=>sumDebt(x)>0).length; 
-  document.getElementById('s3').textContent=transactionsToday(); 
-  document.getElementById('s4').textContent=rp(rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0)); 
-  const list=document.getElementById('list'); 
-  const items=filtered(); 
-  if(!rows.length){list.innerHTML='<div class="card empty">Belum ada data. Tekan + Tambah Data. Data akan tersimpan otomatis.</div>'; return} 
-  if(!items.length){list.innerHTML='<div class="card empty">Data tidak ditemukan.</div>'; return} 
-  const limit=currentLimit(); 
-  list.innerHTML=items.map(p=>{
-    const debt=sumDebt(p), saldo=getSaldo(p), st=statusOf(p); 
-    const pct=Math.min(100,Math.round(debt/limit*100)); 
-    const last=[...(p.trx||[])].sort((a,b)=>b.ts-a.ts)[0]; 
-    const lastText=last?(last.type==='loan'?last.item:'Bayar/Setor')+' · '+rp(last.amount)+' · '+fmt(last.ts):'Belum ada transaksi'; 
+def dengarkan_dan_ubah_ke_teks():
+    subprocess.run(["termux-microphone-record", "-q"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.1)
+    if os.path.exists(AUDIO_M4A):
+        os.remove(AUDIO_M4A)
+        
+    input("\n👉 [Tekan ENTER untuk MULAI Bicara] ")
+    subprocess.Popen(["termux-microphone-record", "-f", AUDIO_M4A, "-e", "m4a"])
+    print("🎤 [MEREKAM...] Silakan bicara sekarang!")
     
-    let amtLabel = 'Lunas';
-    if(debt > 0) amtLabel = rp(debt);
-    else if(saldo > 0) amtLabel = 'Saldo: '+rp(saldo);
+    input("🔴 [Tekan ENTER jika SUDAH SELESAI Bicara] ")
+    subprocess.run(["termux-microphone-record", "-q"])
+    print("⚡ [SISTEM] Memproses suara...")
 
-    return `<div class="card item ${st.c}"><button class="itembtn" onclick="openDetail('${p.id}')"><div class="itemin"><div class="ph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="last">${esc(lastText)}</div><div class="prog"><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div><div class="amt" style="color:${st.f}">${amtLabel}</div></div></div></div></button></div>`
-  }).join('')
-}
+    time.sleep(0.2)
+    if not os.path.exists(AUDIO_M4A) or os.path.getsize(AUDIO_M4A) == 0:
+        return ""
 
-function findDuplicate(name,className,ignoreId=''){return rows.find(x=>x.id!==ignoreId && x.name.trim().toLowerCase()===name.trim().toLowerCase() && x.className===className)}
-function openAdd(){editingId=null; currentPhoto=null; document.getElementById('formTitle').textContent='Tambah Data'; document.getElementById('formMain').reset(); document.getElementById('fotoPrev').classList.add('hidden'); document.getElementById('firstLoanBlock').style.display='block'; openModal('mForm')}
-function openEdit(id){const p=rows.find(x=>x.id===id); if(!p) return; editingId=id; currentPhoto=p.photo||null; document.getElementById('formTitle').textContent='Edit Peminjam'; document.getElementById('nama').value=p.name; document.getElementById('kelas').value=p.className; document.getElementById('barang').value=''; document.getElementById('harga').value=''; document.getElementById('firstLoanBlock').style.display='none'; const prev=document.getElementById('fotoPrev'); if(p.photo){prev.src=p.photo; prev.classList.remove('hidden')} else prev.classList.add('hidden'); openModal('mForm')}
-function openSettings(){syncSettingsUI(); openModal('mSettings')}
-function pickCamera(){document.getElementById('fotoCamera').click()} function pickGallery(){document.getElementById('fotoGallery').click()} function previewPhoto(data){const p=document.getElementById('fotoPrev'); p.src=data; p.classList.remove('hidden')}
-function compressImage(file){return new Promise((resolve,reject)=>{const fr=new FileReader(); fr.onload=e=>{const img=new Image(); img.onload=()=>{const max=480; let w=img.width,h=img.height; if(w>h&&w>max){h=Math.round(h*max/w); w=max}else if(h>=w&&h>max){w=Math.round(w*max/h); h=max} const cv=document.getElementById('cv'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); resolve(cv.toDataURL('image/jpeg',0.58))}; img.onerror=reject; img.src=e.target.result}; fr.onerror=reject; fr.readAsDataURL(file)})}
-async function handlePhotoInput(ev){const f=ev.target.files[0]; if(!f) return; currentPhoto=await compressImage(f); previewPhoto(currentPhoto); ev.target.value=''}
-document.getElementById('fotoCamera').addEventListener('change',handlePhotoInput); document.getElementById('fotoGallery').addEventListener('change',handlePhotoInput);
-document.getElementById('formMain').addEventListener('submit',async e=>{e.preventDefault(); try{const name=document.getElementById('nama').value.trim(); const className=document.getElementById('kelas').value; const item=document.getElementById('barang').value.trim(); const amount=Number(document.getElementById('harga').value||0); const limit=currentLimit(); if(!name||!className) return toast('Nama dan kelas wajib'); const dup=findDuplicate(name,className,editingId||''); if(dup && !confirm('Nama dan kelas ini sudah ada. Lanjut simpan?')) return; if(editingId){const p=rows.find(x=>x.id===editingId); if(!p) return; p.name=name; p.className=className; p.photo=currentPhoto||null; await persist('Data diperbarui')} else {if(!item||amount<=0||amount>limit) return toast('Pinjaman awal wajib dan tidak boleh melebihi limit'); rows.push({id:uid(),name,className,photo:currentPhoto||null,createdAt:Date.now(),trx:[{id:uid(),type:'loan',item,amount,ts:Date.now()}]}); await persist('Data ditambah')} closeModal('mForm')}catch(err){console.error(err); toast('Gagal menyimpan')}})
-document.getElementById('settingsForm').addEventListener('submit',async e=>{e.preventDefault(); const raw=document.getElementById('setClasses').value; const classes=raw.split(/[\n,]/).map(x=>x.trim()).filter(Boolean); const p1=document.getElementById('setPin').value.trim(); const p2=document.getElementById('setPin2').value.trim(); const lockEnabled=document.getElementById('setLockEnabled').value==='yes'; if(lockEnabled){ if(!(p1.length===4||p1.length===6)||!/^[0-9]+$/.test(p1)) return toast('PIN harus 4 atau 6 digit'); if(p1!==p2) return toast('Ulangi PIN tidak sama'); security.pin=p1 } else if(p1||p2){ if(p1!==p2) return toast('Ulangi PIN tidak sama'); if(p1 && !/^[0-9]+$/.test(p1)) return toast('PIN hanya angka'); if(p1 && !(p1.length===4||p1.length===6)) return toast('PIN harus 4 atau 6 digit'); if(p1) security.pin=p1 } security.lockEnabled=lockEnabled; settings={shopName:document.getElementById('setShopName').value.trim()||'Warung Sekolah',limit:Math.max(1000,Number(document.getElementById('setLimit').value||5000)),classes:classes.length?classes:defaultClasses(),theme:document.getElementById('setTheme').value||'orange'}; populateClassSelects(); unlocked=!lockEnabled; await persist('Pengaturan disimpan'); closeModal('mSettings'); initLock()})
-document.getElementById('presetClasses').addEventListener('change',e=>{const v=e.target.value; if(v==='sd') document.getElementById('setClasses').value=['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya'].join('\n'); if(v==='smp') document.getElementById('setClasses').value=['7A','7B','7C','8A','8B','8C','9A','9B','9C','Lainnya'].join('\n'); if(v==='sma') document.getElementById('setClasses').value=['10 IPA','10 IPS','11 IPA','11 IPS','12 IPA','12 IPS','Lainnya'].join('\n')})
+    url = "https://api.groq.com/openai/v1/audio/transcriptions"
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+    
+    try:
+        with open(AUDIO_M4A, "rb") as file_audio:
+            files = {
+                "file": (AUDIO_M4A, file_audio, "audio/m4a"),
+                "model": (None, "whisper-large-v3-turbo"),
+                "language": (None, "id")
+            }
+            res = requests.post(url, headers=headers, files=files, timeout=10)
+            if res.status_code == 200:
+                return res.json().get("text", "").strip()
+            else:
+                return ""
+    except Exception:
+        return ""
 
-function detailHtml(p){
-  const debt=sumDebt(p), saldo=getSaldo(p), limit=currentLimit(), remain=Math.max(0,limit-debt), pct=Math.min(100,Math.round(debt/limit*100)), st=statusOf(p); 
-  const sorted=[...(p.trx||[])].sort((a,b)=>a.ts-b.ts); 
-  let run=0; 
-  const tr=sorted.map(t=>{run+=t.type==='loan'?-t.amount:t.amount; return `<tr><td>${fmt(t.ts)}</td><td>${t.type==='loan'?esc(t.item):'Bayar/Setor'}</td><td class="${t.type==='loan'?'tp':'tb'}">${t.type==='loan'?'-':'+'}${rp(t.amount)}</td><td>${run>0?'Saldo '+rp(run):'Hutang '+rp(-run)}</td></tr>`}).join(''); 
-  
-  return `<div class="handle"></div><div class="mh">Detail Peminjam</div><div class="detailhead"><div class="bigph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="hint">Mulai tercatat: ${fmt(p.createdAt)}</div></div></div><div class="card limit"><div class="limitline"><span>${debt>0?'Hutang: '+rp(debt):'Saldo: '+rp(saldo)}</span><span>Sisa limit: ${rp(remain)}</span></div><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div></div><div class="paybox"><input id="payAmount" class="input" type="number" min="1" placeholder="Nominal bayar / setor"><button class="btn bp" onclick="payDebt()">Bayar/Setor</button></div><div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:.9rem"><button class="btn bp" onclick="addLoan()">Tambah pinjaman</button><button class="btn bg" onclick="openEdit('${p.id}')">Edit</button><button class="btn bd" onclick="removePerson('${p.id}')">Hapus</button></div><table class="tbl"><thead><tr><th>Tanggal</th><th>Barang</th><th>Jumlah</th><th>Status Total</th></tr></thead><tbody>${tr||'<tr><td colspan="4">Belum ada transaksi</td></tr>'}</tbody></table>`
-}
+# ==========================================
+# LOGIKA FITUR CEK HARGA & VARIAN BARANG
+# ==========================================
+def cek_pertanyaan_katalog(user_input, catalog):
+    teks_lower = user_input.lower()
+    input_clean = bersihkan_teks(user_input)
+    
+    is_tanya_harga = any(k in teks_lower for k in ["harga", "berapa", "berapan", "biaya", "jual"])
+    is_tanya_varian = any(k in teks_lower for k in ["varian", "rasa", "macam", "pilihan", "apa aja", "apa saja"])
 
-function openDetail(id){currentId=id; const p=rows.find(x=>x.id===id); if(!p) return; document.getElementById('detailBody').innerHTML=detailHtml(p); openModal('mDetail')}
-async function payDebt(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const amount=Number(document.getElementById('payAmount').value||0); if(amount<=0) return toast('Nominal tidak valid'); p.trx.push({id:uid(),type:'pay',item:'-',amount,ts:Date.now()}); await persist('Pembayaran/Setoran disimpan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
-async function addLoan(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const item=prompt('Nama barang pinjaman'); if(!item) return; const amount=Number(prompt('Harga pinjaman')||0); if(amount<=0) return toast('Nominal tidak valid'); p.trx.push({id:uid(),type:'loan',item:item.trim(),amount,ts:Date.now()}); await persist('Pinjaman ditambahkan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
-async function removePerson(id){try{if(!confirm('Hapus data ini?')) return; rows=rows.filter(x=>x.id!==id); await persist('Data dihapus'); closeModal('mDetail')}catch(err){console.error(err); toast('Gagal menyimpan')}}
-function buildSummaryText(){const total=rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0); const unpaid=rows.filter(x=>sumDebt(x)>0).length; return `BonSekolah by MZW Digital\n${settings.shopName||'Warung Sekolah'}\n\nTotal anak: ${rows.length}\nBelum lunas: ${unpaid}\nAktivitas hari ini: ${transactionsToday()}\nTotal piutang: ${rp(total)}`}
-function shareSummary(){const txt=buildSummaryText(); if(navigator.share){navigator.share({title:'BonSekolah by MZW Digital',text:txt}).catch(()=>{window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')})} else {window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')} }
-function downloadBackup(){const data={settings,security,items:rows,meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bonsekolah-backup.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); toast('Backup JSON dibuat')}
-document.getElementById('importJson').addEventListener('change',async e=>{const f=e.target.files[0]; if(!f) return; try{if(!confirm('Import akan mengganti data yang ada di aplikasi ini. Lanjut?')) return; const parsed=JSON.parse(await f.text()); const n=normalizeImported(parsed); settings=n.settings; security=n.security; rows=n.items; syncSettingsUI(); populateClassSelects(); await persist('Import JSON berhasil'); initLock()}catch(err){console.error(err); toast('File JSON tidak valid')} finally {e.target.value=''}})
-function initLock(){enteredPin=''; updateDots(); const needLock=security.lockEnabled&&security.pin; if(!needLock){unlocked=true; document.getElementById('lockScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); return} if(!unlocked){document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.add('hidden')} togglePinDots()}
-function togglePinDots(){const len=(security.pin||'').length||4; ['d1','d2','d3','d4','d5','d6'].forEach((id,i)=>document.getElementById(id).classList.toggle('hidden',i>=len))}
-function updateDots(){const len=(security.pin||'').length||4; ['d1','d2','d3','d4','d5','d6'].forEach((id,i)=>{document.getElementById(id).classList.toggle('hidden',i>=len); document.getElementById('d'+(i+1)).classList.toggle('on',i<enteredPin.length)})}
-function pinTap(n){if(!(security.lockEnabled&&security.pin)) return; enteredPin+=n; updateDots(); if(enteredPin.length===security.pin.length){ if(enteredPin===security.pin){ unlocked=true; document.getElementById('lockScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); toast('PIN benar') } else { enteredPin=''; updateDots(); toast('PIN salah') } }}
-function pinClear(){enteredPin=enteredPin.slice(0,-1); updateDots()}
-function lockNow(){if(!(security.lockEnabled&&security.pin)) return toast('PIN belum aktif'); unlocked=false; enteredPin=''; updateDots(); document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.add('hidden');}
-loadState();
-</script>
+    if not (is_tanya_harga or is_tanya_varian):
+        return False, ""
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.error('SW error:', e));
-  });
-}
-</script>
-</body>
-</html>
+    # Cari item di katalog yang cocok dengan ucapan
+    for item in catalog:
+        item_clean = bersihkan_teks(item["name"])
+        if item_clean in input_clean:
+            # 1. Jika bertanya Varian / Rasa
+            if is_tanya_varian:
+                variants_str = item.get("variants", "").strip()
+                if variants_str:
+                    return True, f"Varian {item['name']} ada {variants_str}, tapi untuk stoknya silakan tanya ke yang jaga ya!"
+                else:
+                    return True, f"{item['name']} harganya {item['price']} rupiah. Untuk varian rasanya silakan langsung tanya ke yang jaga ya!"
+            
+            # 2. Jika bertanya Harga
+            if is_tanya_harga:
+                return True, f"Harga {item['name']} adalah {item['price']} rupiah."
+
+    if is_tanya_harga or is_tanya_varian:
+        return True, "Maaf, barang tersebut belum ada di daftar katalog warung."
+
+    return False, ""
+
+# ==========================================
+# LOGIKA PENCATATAN TRANSAKSI INTERAKTIF AI
+# ==========================================
+def proses_bon_suara(user_input):
+    global konteks_aktif
+    teks_lower = user_input.lower()
+    input_clean = bersihkan_teks(user_input)
+    nominal = ekstrak_angka_nominal(user_input)
+    db = load_raw_db()
+    items = db.get("items", [])
+    catalog = db.get("catalog", [])
+
+    # A. CEK PERTANYAAN HARGA ATAU VARIAN DULU
+    is_katalog, respon_katalog = cek_pertanyaan_katalog(user_input, catalog)
+    if is_katalog:
+        return True, respon_katalog
+
+    matched_student = None
+
+    if konteks_aktif["nama_siswa"]:
+        if any(k in teks_lower for k in ["batal", "tidak", "cancel", "salah"]):
+            konteks_aktif = {"nama_siswa": None, "aksi": None}
+            return True, "Baik, transaksi dibatalkan."
+        if nominal > 0:
+            for p in items:
+                if p["name"] == konteks_aktif["nama_siswa"]:
+                    matched_student = p
+                    teks_lower += f" {konteks_aktif['aksi']}"
+                    break
+            konteks_aktif = {"nama_siswa": None, "aksi": None}
+
+    if not matched_student:
+        for p in items:
+            name_clean = bersihkan_teks(p["name"])
+            class_clean = bersihkan_teks(p.get("className", ""))
+            full_clean = name_clean + class_clean
+            
+            if name_clean in input_clean or full_clean in input_clean:
+                matched_student = p
+                break
+
+    if not matched_student:
+        is_intent_bon = any(k in teks_lower for k in ["bon", "kasbon", "utang", "pinjaman", "bayar", "lunas", "cek", "saldo", "setor"])
+        if is_intent_bon:
+            return True, "Nama siswa tersebut belum terdaftar di Web UI. Tolong daftarkan dulu ya!"
+        return False, ""
+
+    p = matched_student
+    utang_lama, saldo_lama = hitung_status_pembeli(p)
+
+    if any(k in teks_lower for k in ["bayar", "lunas", "potong", "cicil", "setor", "isi"]):
+        if nominal <= 0:
+            konteks_aktif = {"nama_siswa": p["name"], "aksi": "bayar"}
+            return True, f"Berapa nominal yang mau dibayarkan untuk {p['name']}?"
+
+        p["trx"].append({
+            "id": generate_uid(),
+            "type": "pay",
+            "item": "-",
+            "amount": nominal,
+            "ts": int(time.time()*1000)
+        })
+        save_raw_db(db)
+        utang_baru, saldo_baru = hitung_status_pembeli(p)
+        konteks_aktif = {"nama_siswa": None, "aksi": None}
+
+        if utang_lama > 0:
+            if saldo_baru > 0:
+                return True, f"Pembayaran {nominal} rupiah diterima. Bon {p['name']} lunas, dan sekarang punya sisa saldo {saldo_baru} rupiah."
+            elif utang_baru > 0:
+                return True, f"Pembayaran {nominal} rupiah diterima. Sisa bon {p['name']} sekarang {utang_baru} rupiah."
+            else:
+                return True, f"Pembayaran {nominal} rupiah diterima. Bon {p['name']} pas lunas!"
+        else:
+            return True, f"Setor saldo {nominal} rupiah diterima. Saldo {p['name']} sekarang menjadi {saldo_baru} rupiah."
+
+    is_cek_keyword = any(k in teks_lower for k in ["cek", "check", "lihat", "berapa", "pinjaman", "utang", "kasbon", "bon", "ada", "catatan", "saldo"])
+    if is_cek_keyword and nominal == 0 and "tambah" not in teks_lower:
+        konteks_aktif = {"nama_siswa": None, "aksi": None}
+        if utang_lama > 0:
+            return True, f"Total bon {p['name']} kelas {p.get('className','')} adalah {utang_lama} rupiah."
+        elif saldo_lama > 0:
+            return True, f"{p['name']} kelas {p.get('className','')} tidak punya bon, dan memiliki saldo {saldo_lama} rupiah."
+        else:
+            return True, f"{p['name']} kelas {p.get('className','')} tidak memiliki bon maupun saldo."
+
+    if nominal > 0 or any(k in teks_lower for k in ["tambah", "pinjam", "beli"]):
+        if nominal <= 0:
+            konteks_aktif = {"nama_siswa": p["name"], "aksi": "bon"}
+            return True, f"Berapa nominal bon yang mau dicatat untuk {p['name']}?"
+
+        limit = db.get("settings", {}).get("limit", 5000)
+        if (utang_lama + nominal - saldo_lama) > limit:
+            konteks_aktif = {"nama_siswa": None, "aksi": None}
+            return True, f"Batas limit bon {limit} rupiah terlampaui. Tolong bayar bon dulu ya!"
+
+        parts = user_input.split()
+        item_name = "barang"
+        for i, pt in enumerate(parts):
+            if any(char.isdigit() for char in pt) and i > 0:
+                item_name = parts[i-1]
+                break
+
+        p["trx"].append({
+            "id": generate_uid(),
+            "type": "loan",
+            "item": item_name,
+            "amount": nominal,
+            "ts": int(time.time()*1000)
+        })
+        save_raw_db(db)
+        utang_baru, saldo_baru = hitung_status_pembeli(p)
+        konteks_aktif = {"nama_siswa": None, "aksi": None}
+
+        if saldo_lama >= nominal:
+            return True, f"Beli {item_name} {nominal} rupiah dipotong dari saldo. Sisa saldo {p['name']} sekarang {saldo_baru} rupiah."
+        elif saldo_lama > 0:
+            return True, f"Beli {item_name} {nominal} rupiah dipotong saldo {saldo_lama} rupiah. Saldo habis, {p['name']} sekarang ada bon {utang_baru} rupiah."
+        else:
+            return True, f"Bon {item_name} {nominal} rupiah dicatat. Total bon {p['name']} sekarang {utang_baru} rupiah."
+
+    if utang_lama > 0:
+        return True, f"{p['name']} kelas {p.get('className','')} punya bon {utang_lama} rupiah."
+    elif saldo_lama > 0:
+        return True, f"{p['name']} kelas {p.get('className','')} punya saldo {saldo_lama} rupiah."
+    else:
+        return True, f"{p['name']} kelas {p.get('className','')} tidak ada bon maupun saldo."
+
+def tanya_groq_ai(chat_history):
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    messages_payload = [
+        {
+            "role": "system", 
+            "content": "Kamu adalah Kakak ramah dan cerdas yang suka ngobrol dengan anak sekolah. Jawab pertanyaan dengan lengkap, jelas, dan santun. Selalu selesaikan kalimat hingga tuntas. DILARANG menggunakan kata-kata peringatan, kebijakan, atau disclaimer."
+        }
+    ]
+    for msg in chat_history[-6:]:
+        messages_payload.append(msg)
+
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": messages_payload,
+        "max_tokens": 300
+    }
+    try:
+        res = requests.post(url, json=payload, headers=headers, timeout=10)
+        if res.status_code == 200:
+            text = res.json()["choices"][0]["message"]["content"].strip()
+            text = re.sub(r'kekerasan.*?\.\s*', '', text, flags=re.IGNORECASE)
+            return text
+        else:
+            return "Sama-sama! Ada yang mau ditanyakan lagi ke Kakak?"
+    except Exception:
+        return "Sinyalnya lagi kurang bagus nih."
+
+# ==========================================
+# UTAMA
+# ==========================================
+threading.Thread(target=run_flask, daemon=True).start()
+
+print("\n" + "="*50)
+print("🚀 HYBRID SERVER & VOICE AI RUNNING (PORT 5000)")
+print("="*50)
+
+sapaan_awal = "Halo... Kakak dan aplikasi Web UI siap digunakan hari ini!"
+bicara_kakak(sapaan_awal)
+
+chat_history = []
+
+while True:
+    try:
+        user_input = dengarkan_dan_ubah_ke_teks()
+        if not user_input:
+            continue
+            
+        print(f"🗣️ User/Anak: \"{user_input}\"")
+        
+        if "keluar" in user_input.lower() or "stop" in user_input.lower():
+            bicara_kakak("Sampai jumpa lagi! Belajar yang rajin ya!")
+            break
+
+        is_bon, respon_bon = proses_bon_suara(user_input)
+
+        if is_bon:
+            bicara_kakak(respon_bon)
+        else:
+            chat_history.append({"role": "user", "content": user_input})
+            ai_reply = tanya_groq_ai(chat_history)
+            chat_history.append({"role": "assistant", "content": ai_reply})
+            bicara_kakak(ai_reply)
+
+    except Exception as e:
+        print(f"\n❌ Ada kendala: {e}\n")
+EOF
