@@ -155,74 +155,49 @@ function currentLimit(){return Math.max(1000,Number(settings.limit||5000))}
 function transactionsToday(){const start=new Date(); start.setHours(0,0,0,0); let n=0; for(const p of rows){for(const t of (p.trx||[])){if(t.ts>=start.getTime()) n++}} return n}
 function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
-for(const id of ['mFor  </table>
-  <div style="margin-top:1rem"><button type="button" class="btn bg" onclick="closeModal('mCatalog')">Tutup</button></div>
-</div></div>
-
-<div class="modal" id="mDetail"><div class="sheet" id="detailBody"></div></div>
-
-<div class="modal" id="mSettings"><div class="sheet"><div class="handle"></div><div class="mh" >Pengaturan</div><form class="form" id="settingsForm">
-  <div class="sec"><h3>Umum</h3><div class="fg"><label>Nama warung</label><input id="setShopName" placeholder="Warung Sekolah"></div></div>
-  <div class="sec"><h3>Keamanan</h3><div class="two"><div class="fg"><label>PIN aplikasi</label><input id="setPin" inputmode="numeric" maxlength="6" placeholder="4 atau 6 digit"></div><div class="fg"><label>Ulangi PIN</label><input id="setPin2" inputmode="numeric" maxlength="6" placeholder="Ulangi PIN"></div></div><div class="fg"><label>Kunci aplikasi dengan PIN</label><select id="setLockEnabled"><option value="yes">Ya</option><option value="no">Tidak</option></select></div></div>
-  <div class="sec"><h3>Backup & Import</h3><div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="downloadBackup()">Backup JSON</button><button type="button" class="btn bg" onclick="document.getElementById('importJson').click()">Import JSON</button><input id="importJson" type="file" accept="application/json" hidden></div><div class="small" style="margin-top:.55rem">Lakukan backup berkala agar data aman.</div></div>
-  <div class="sec"><h3>Custom</h3><div class="two"><div class="fg"><label>Warna utama</label><select id="setTheme"><option value="orange">Oranye hangat</option><option value="blue">Biru sekolah</option><option value="green">Hijau segar</option><option value="purple">Ungu lembut</option></select></div><div class="fg"><label>Limit hutang per anak</label><input id="setLimit" type="number" min="1000" step="500"></div></div><div class="fg"><label>Preset kelas</label><select id="presetClasses"><option value="">Pilih preset</option><option value="sd">SD: 1A-6B</option><option value="smp">SMP: 7A-9C</option><option value="sma">SMA: 10 IPA/IPS - 12 IPA/IPS</option></select></div><div class="fg"><label>Daftar kelas</label><textarea id="setClasses" placeholder="Satu kelas per baris atau pisah koma"></textarea></div></div>
-  <div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="closeModal('mSettings')">Tutup</button><button type="submit" class="btn bp">Simpan Pengaturan</button></div>
-</form></div></div>
-
-<canvas id="cv" hidden></canvas>
-<script>
-const STATE_KEY='main';
-let state=null, rows=[], catalog=[], settings={}, security={}, currentPhoto=null, editingId=null, currentId=null, enteredPin='', unlocked=false, isTermuxOnline=false;
-function defaultClasses(){return ['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya']}
-function defaultSettings(){return {shopName:'Warung Sekolah',limit:5000,classes:defaultClasses(),theme:'orange'}}
-function defaultSecurity(){return {lockEnabled:false,pin:''}}
-function defaultCatalog(){return [{id:'1',name:'Es Krim',price:1000,variants:'Coklat, Stroberi, Taro, Alpukat'},{id:'2',name:'Pop Ice',price:3000,variants:'Coklat, Vanilla, Mangga'}]}
-function defaultState(){return {settings:defaultSettings(),security:defaultSecurity(),items:[],catalog:defaultCatalog(),meta:{app:'BonSekolah by MZW Digital',version:6,updatedAt:Date.now()}}}
-function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div>'+msg+'</div>';setTimeout(()=>t.innerHTML='',2400)}
-function esc(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
-function fmt(ts){const d=new Date(ts);const t=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});return t+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-
-function getNetBalance(p){ return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0); }
-function sumDebt(p){ const net = getNetBalance(p); return net < 0 ? -net : 0; }
-function getSaldo(p){ const net = getNetBalance(p); return net > 0 ? net : 0; }
-
-function outstandingLots(p){const lots=[];for(const t of (p.trx||[]).sort((a,b)=>a.ts-b.ts)){if(t.type==='loan') lots.push({ts:t.ts,remain:t.amount}); else {let pay=t.amount; for(const lot of lots){if(pay<=0) break; const used=Math.min(pay,lot.remain); lot.remain-=used; pay-=used;}}}return lots.filter(x=>x.remain>0)}
-function oldestOutstandingTs(p){const lots=outstandingLots(p);return lots.length?Math.min(...lots.map(x=>x.ts)):Infinity}
-function statusOf(p){
-  const net = getNetBalance(p);
-  if(net > 0) return {c:'cb',p:'sb',f:'var(--bl)',text:'Saldo Ada'};
-  if(net === 0) return {c:'cg',p:'sg',f:'var(--ok)',text:'Lunas'};
-  const oldest=outstandingLots(p)[0];
-  const days=Math.floor((Date.now()-(oldest?oldest.ts:Date.now()))/86400000);
-  if(days<3) return {c:'cb',p:'sb',f:'var(--bl)',text:days===0?'Hari ini':'1-2 hari'};
-  if(days<6) return {c:'co',p:'so',f:'var(--or)',text:'3-5 hari'};
-  return {c:'cr',p:'sr',f:'var(--er)',text:'6+ hari'};
-}
-function currentLimit(){return Math.max(1000,Number(settings.limit||5000))}
-function transactionsToday(){const start=new Date(); start.setHours(0,0,0,0); let n=0; for(const p of rows){for(const t of (p.trx||[])){if(t.ts>=start.getTime()) n++}} return n}
-function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
-function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
 for(const id of ['mForm','mDetail','mSettings','mCatalog']) document.getElementById(id).onclick=e=>{if(e.target.id===id) closeModal(id)}
 
+// SINKRONISASI PINTAR BERBASIS WAKTU (TWO-WAY TIMESTAMP SYNC)
 async function dbGet(key){
+    const localRaw = localStorage.getItem('bonsekolah_cache');
+    let localData = null;
+    if (localRaw) {
+        try { localData = JSON.parse(localRaw); } catch(e){}
+    }
+
     try {
         const res = await fetch('http://localhost:5000/api/data', { signal: AbortSignal.timeout(1500) });
         if(res.ok) {
-            const data = await res.json();
+            const serverData = await res.json();
             isTermuxOnline = true;
-            localStorage.setItem('bonsekolah_cache', JSON.stringify(data));
-            return data;
+
+            const localTime = (localData && localData.meta && localData.meta.updatedAt) ? localData.meta.updatedAt : 0;
+            const serverTime = (serverData && serverData.meta && serverData.meta.updatedAt) ? serverData.meta.updatedAt : 0;
+
+            // Jika Data di HP LEBIH BARU daripada Data di Termux (karena di-edit pas Termux mati)
+            if (localData && localTime > serverTime) {
+                // Kirim data terbaru dari HP ke Termux
+                await fetch('http://localhost:5000/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(localData)
+                });
+                return localData;
+            } else {
+                // Jika Termux lebih baru / sama, update cache HP
+                localStorage.setItem('bonsekolah_cache', JSON.stringify(serverData));
+                return serverData;
+            }
         }
     } catch(e) {}
+
+    // Jika Termux Offline, pakai data HP
     isTermuxOnline = false;
-    const localData = localStorage.getItem('bonsekolah_cache');
-    if(localData) { try { return JSON.parse(localData); } catch(e){} }
-    return null;
+    return localData;
 }
 
 async function dbSet(key,val){
+    val.meta.updatedAt = Date.now(); // Update timestamp lokal
     localStorage.setItem('bonsekolah_cache', JSON.stringify(val));
     try {
         await fetch('http://localhost:5000/api/data', {
@@ -233,9 +208,9 @@ async function dbSet(key,val){
     } catch(e) { toast("Offline: Tersimpan di memori HP"); }
 }
 
-function normalizeImported(parsed){const base=defaultState(); const s=parsed.settings||{}; const sec=parsed.security||{}; const classesRaw=s.classes||parsed.classes||base.settings.classes; const classes=Array.isArray(classesRaw)?classesRaw.filter(Boolean):String(classesRaw||'').split(/[\n,]/).map(x=>x.trim()).filter(Boolean); return {settings:{shopName:s.shopName||base.settings.shopName,limit:Math.max(1000,Number(s.limit||base.settings.limit)),classes:classes.length?classes:base.settings.classes,theme:s.theme||base.settings.theme},security:{lockEnabled:!!sec.lockEnabled,pin:String(sec.pin||'')},items:Array.isArray(parsed.items)?parsed.items:[],catalog:Array.isArray(parsed.catalog)?parsed.catalog:defaultCatalog(),meta:{app:'BonSekolah by MZW Digital',version:6,updatedAt:Date.now()}}}
+function normalizeImported(parsed){const base=defaultState(); const s=parsed.settings||{}; const sec=parsed.security||{}; const classesRaw=s.classes||parsed.classes||base.settings.classes; const classes=Array.isArray(classesRaw)?classesRaw.filter(Boolean):String(classesRaw||'').split(/[\n,]/).map(x=>x.trim()).filter(Boolean); return {settings:{shopName:s.shopName||base.settings.shopName,limit:Math.max(1000,Number(s.limit||base.settings.limit)),classes:classes.length?classes:base.settings.classes,theme:s.theme||base.settings.theme},security:{lockEnabled:!!sec.lockEnabled,pin:String(sec.pin||'')},items:Array.isArray(parsed.items)?parsed.items:[],catalog:Array.isArray(parsed.catalog)?parsed.catalog:defaultCatalog(),meta:{app:'BonSekolah by MZW Digital',version:7,updatedAt:parsed.meta?.updatedAt||Date.now()}}}
 async function loadState(){try{const saved=await dbGet(STATE_KEY); state=saved?normalizeImported(saved):defaultState(); settings=state.settings; security=state.security; rows=Array.isArray(state.items)?state.items:[]; catalog=Array.isArray(state.catalog)?state.catalog:defaultCatalog();}catch(e){console.error(e); state=defaultState(); settings=state.settings; security=state.security; rows=[]; catalog=defaultCatalog();} syncSettingsUI(); populateClassSelects(); applyBrand(); render(); initLock()}
-async function saveState(){state={settings,security,items:rows,catalog,meta:{app:'BonSekolah by MZW Digital',version:6,updatedAt:Date.now()}}; await dbSet(STATE_KEY,state)}
+async function saveState(){state={settings,security,items:rows,catalog,meta:{app:'BonSekolah by MZW Digital',version:7,updatedAt:Date.now()}}; await dbSet(STATE_KEY,state)}
 async function persist(msg='Tersimpan'){await saveState();applyBrand();render(); if(msg) toast(msg)}
 function applyTheme(){const m={orange:['#c96b00','#a55600'],blue:['#2265d8','#184ba1'],green:['#2e8b57','#20633d'],purple:['#8257d7','#6240ab']}[settings.theme||'orange']; document.documentElement.style.setProperty('--pri',m[0]); document.documentElement.style.setProperty('--pri2',m[1])}
 
@@ -284,7 +259,6 @@ function render(){
   }).join('')
 }
 
-// LOGIKA FUNGSIONAL KATALOG
 function openCatalog(){ renderCatalog(); openModal('mCatalog'); }
 function renderCatalog(){
   const tb = document.getElementById('catTable');
@@ -336,14 +310,14 @@ async function addLoan(){try{const p=rows.find(x=>x.id===currentId); if(!p) retu
 async function removePerson(id){try{if(!confirm('Hapus data ini?')) return; rows=rows.filter(x=>x.id!==id); await persist('Data dihapus'); closeModal('mDetail')}catch(err){console.error(err); toast('Gagal menyimpan')}}
 function buildSummaryText(){const total=rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0); const unpaid=rows.filter(x=>sumDebt(x)>0).length; return `BonSekolah by MZW Digital\n${settings.shopName||'Warung Sekolah'}\n\nTotal anak: ${rows.length}\nBelum lunas: ${unpaid}\nAktivitas hari ini: ${transactionsToday()}\nTotal piutang: ${rp(total)}`}
 function shareSummary(){const txt=buildSummaryText(); if(navigator.share){navigator.share({title:'BonSekolah by MZW Digital',text:txt}).catch(()=>{window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')})} else {window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')} }
-function downloadBackup(){const data={settings,security,items:rows,catalog,meta:{app:'BonSekolah by MZW Digital',version:6,updatedAt:Date.now()}}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bonsekolah-backup.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); toast('Backup JSON dibuat')}
+function downloadBackup(){const data={settings,security,items:rows,catalog,meta:{app:'BonSekolah by MZW Digital',version:7,updatedAt:Date.now()}}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bonsekolah-backup.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); toast('Backup JSON dibuat')}
 document.getElementById('importJson').addEventListener('change',async e=>{const f=e.target.files[0]; if(!f) return; try{if(!confirm('Import akan mengganti data yang ada di aplikasi ini. Lanjut?')) return; const parsed=JSON.parse(await f.text()); const n=normalizeImported(parsed); settings=n.settings; security=n.security; rows=n.items; catalog=n.catalog; syncSettingsUI(); populateClassSelects(); await persist('Import JSON berhasil'); initLock()}catch(err){console.error(err); toast('File JSON tidak valid')} finally {e.target.value=''}})
 function initLock(){enteredPin=''; updateDots(); const needLock=security.lockEnabled&&security.pin; if(!needLock){unlocked=true; document.getElementById('lockScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); return} if(!unlocked){document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.add('hidden')} togglePinDots()}
 function togglePinDots(){const len=(security.pin||'').length||4; ['d1','d2','d3','d4','d5','d6'].forEach((id,i)=>document.getElementById(id).classList.toggle('hidden',i>=len))}
 function updateDots(){const len=(security.pin||'').length||4; ['d1','d2','d3','d4','d5','d6'].forEach((id,i)=>{document.getElementById(id).classList.toggle('hidden',i>=len); document.getElementById('d'+(i+1)).classList.toggle('on',i<enteredPin.length)})}
 function pinTap(n){if(!(security.lockEnabled&&security.pin)) return; enteredPin+=n; updateDots(); if(enteredPin.length===security.pin.length){ if(enteredPin===security.pin){ unlocked=true; document.getElementById('lockScreen').classList.add('hidden'); document.getElementById('appShell').classList.remove('hidden'); toast('PIN benar') } else { enteredPin=''; updateDots(); toast('PIN salah') } }}
 function pinClear(){enteredPin=enteredPin.slice(0,-1); updateDots()}
-function lockNow(){if(!(security.lockEnabled&&security.pin)) return toast('PIN belum aktif'); unlocked=false; enteredPin=''; updateDots(); document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.remove('hidden'); document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.add('hidden');}
+function lockNow(){if(!(security.lockEnabled&&security.pin)) return toast('PIN belum aktif'); unlocked=false; enteredPin=''; updateDots(); document.getElementById('lockScreen').classList.remove('hidden'); document.getElementById('appShell').classList.add('hidden');}
 loadState();
 </script>
 
