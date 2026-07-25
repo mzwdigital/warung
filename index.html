@@ -128,6 +128,55 @@ function defaultClasses(){return ['1A','1B','2A','2B','3A','3B','4A','4B','5A','
 function defaultSettings(){return {shopName:'Warung Sekolah',limit:5000,classes:defaultClasses(),theme:'orange'}}
 function defaultSecurity(){return {lockEnabled:false,pin:''}}
 function defaultCatalog(){return [{id:'1',name:'Es Krim',price:1000,variants:'Coklat, Stroberi, Taro, Alpukat'},{id:'2',name:'Pop Ice',price:3000,variants:'Coklat, Vanilla, Mangga'}]}
+function defaultState(){return {settings:defaultSettings(),security:defaultSecurity(),items:[],catalog:defaultCatalog(),meta:{app:'BonSekolah by MZW Digital',version:7,updatedAt:Date.now()}}}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div>'+msg+'</div>';setTimeout(()=>t.innerHTML='',2400)}
+function esc(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
+function fmt(ts){const d=new Date(ts);const t=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});return t+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+function getNetBalance(p){ return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0); }
+function sumDebt(p){ const net = getNetBalance(p); return net < 0 ? -net : 0; }
+function getSaldo(p){ const net = getNetBalance(p); return net > 0 ? net : 0; }
+
+function outstandingLots(p){const lots=[];for(const t of (p.trx||[]).sort((a,b)=>a.ts-b.ts)){if(t.type==='loan') lots.push({ts:t.ts,remain:t.amount}); else {let pay=t.amount; for(const lot of lots){if(pay<=0) break; const used=Math.min(pay,lot.remain); lot.remain-=used; pay-=used;}}}return lots.filter(x=>x.remain>0)}
+function oldestOutstandingTs(p){const lots=outstandingLots(p);return lots.length?Math.min(...lots.map(x=>x.ts)):Infinity}
+function statusOf(p){
+  const net = getNetBalance(p);
+  if(net > 0) return {c:'cb',p:'sb',f:'var(--bl)',text:'Saldo Ada'};
+  if(net === 0) return {c:'cg',p:'sg',f:'var(--ok)',text:'Lunas'};
+  const oldest=outstandingLots(p)[0];
+  const days=Math.floor((Date.now()-(oldest?oldest.ts:Date.now()))/86400000);
+  if(days<3) return {c:'cb',p:'sb',f:'var(--bl)',text:days===0?'Hari ini':'1-2 hari'};
+  if(days<6) return {c:'co',p:'so',f:'var(--or)',text:'3-5 hari'};
+  return {c:'cr',p:'sr',f:'var(--er)',text:'6+ hari'};
+}
+function currentLimit(){return Math.max(1000,Number(settings.limit||5000))}
+function transactionsToday(){const start=new Date(); start.setHours(0,0,0,0); let n=0; for(const p of rows){for(const t of (p.trx||[])){if(t.ts>=start.getTime()) n++}} return n}
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
+for(const id of ['mFor  </table>
+  <div style="margin-top:1rem"><button type="button" class="btn bg" onclick="closeModal('mCatalog')">Tutup</button></div>
+</div></div>
+
+<div class="modal" id="mDetail"><div class="sheet" id="detailBody"></div></div>
+
+<div class="modal" id="mSettings"><div class="sheet"><div class="handle"></div><div class="mh" >Pengaturan</div><form class="form" id="settingsForm">
+  <div class="sec"><h3>Umum</h3><div class="fg"><label>Nama warung</label><input id="setShopName" placeholder="Warung Sekolah"></div></div>
+  <div class="sec"><h3>Keamanan</h3><div class="two"><div class="fg"><label>PIN aplikasi</label><input id="setPin" inputmode="numeric" maxlength="6" placeholder="4 atau 6 digit"></div><div class="fg"><label>Ulangi PIN</label><input id="setPin2" inputmode="numeric" maxlength="6" placeholder="Ulangi PIN"></div></div><div class="fg"><label>Kunci aplikasi dengan PIN</label><select id="setLockEnabled"><option value="yes">Ya</option><option value="no">Tidak</option></select></div></div>
+  <div class="sec"><h3>Backup & Import</h3><div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="downloadBackup()">Backup JSON</button><button type="button" class="btn bg" onclick="document.getElementById('importJson').click()">Import JSON</button><input id="importJson" type="file" accept="application/json" hidden></div><div class="small" style="margin-top:.55rem">Lakukan backup berkala agar data aman.</div></div>
+  <div class="sec"><h3>Custom</h3><div class="two"><div class="fg"><label>Warna utama</label><select id="setTheme"><option value="orange">Oranye hangat</option><option value="blue">Biru sekolah</option><option value="green">Hijau segar</option><option value="purple">Ungu lembut</option></select></div><div class="fg"><label>Limit hutang per anak</label><input id="setLimit" type="number" min="1000" step="500"></div></div><div class="fg"><label>Preset kelas</label><select id="presetClasses"><option value="">Pilih preset</option><option value="sd">SD: 1A-6B</option><option value="smp">SMP: 7A-9C</option><option value="sma">SMA: 10 IPA/IPS - 12 IPA/IPS</option></select></div><div class="fg"><label>Daftar kelas</label><textarea id="setClasses" placeholder="Satu kelas per baris atau pisah koma"></textarea></div></div>
+  <div style="display:flex;gap:.55rem;flex-wrap:wrap"><button type="button" class="btn bg" onclick="closeModal('mSettings')">Tutup</button><button type="submit" class="btn bp">Simpan Pengaturan</button></div>
+</form></div></div>
+
+<canvas id="cv" hidden></canvas>
+<script>
+const STATE_KEY='main';
+let state=null, rows=[], catalog=[], settings={}, security={}, currentPhoto=null, editingId=null, currentId=null, enteredPin='', unlocked=false, isTermuxOnline=false;
+function defaultClasses(){return ['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya']}
+function defaultSettings(){return {shopName:'Warung Sekolah',limit:5000,classes:defaultClasses(),theme:'orange'}}
+function defaultSecurity(){return {lockEnabled:false,pin:''}}
+function defaultCatalog(){return [{id:'1',name:'Es Krim',price:1000,variants:'Coklat, Stroberi, Taro, Alpukat'},{id:'2',name:'Pop Ice',price:3000,variants:'Coklat, Vanilla, Mangga'}]}
 function defaultState(){return {settings:defaultSettings(),security:defaultSecurity(),items:[],catalog:defaultCatalog(),meta:{app:'BonSekolah by MZW Digital',version:6,updatedAt:Date.now()}}}
 function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div>'+msg+'</div>';setTimeout(()=>t.innerHTML='',2400)}
 function esc(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
