@@ -61,7 +61,7 @@ button,input,select,textarea{font:inherit;color:inherit}img{max-width:100%;displ
 <header class="top"><div class="topin"><div class="brand"><div class="logo">📒</div><div><div class="t1">BonSekolah by MZW Digital</div><div class="t2" id="shopTitle">Warung Sekolah</div></div></div></div></header>
 <div class="toast" id="toast"></div>
 <main class="wrap">
-  <div class="note"><strong>Terhubung dengan AI Termux</strong><div class="mini">Data tersinkronisasi otomatis dengan server AI lokal di perangkat.</div></div>
+  <div class="note" id="statusBox"><strong>Mode Offline (Termux Tidak Aktif)</strong><div class="mini" id="statusText">Menampilkan data cadangan terakhir di HP.</div></div>
   <div class="actions">
     <button class="btn bg" onclick="openSettings()" >Pengaturan</button>
     <button class="btn bg" onclick="shareSummary()">Bagikan Ringkasan</button>
@@ -102,7 +102,7 @@ button,input,select,textarea{font:inherit;color:inherit}img{max-width:100%;displ
 <canvas id="cv" hidden></canvas>
 <script>
 const STATE_KEY='main';
-let state=null, rows=[], settings={}, security={}, currentPhoto=null, editingId=null, currentId=null, enteredPin='', unlocked=false;
+let state=null, rows=[], settings={}, security={}, currentPhoto=null, editingId=null, currentId=null, enteredPin='', unlocked=false, isTermuxOnline=false;
 function defaultClasses(){return ['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya']}
 function defaultSettings(){return {shopName:'Warung Sekolah',limit:5000,classes:defaultClasses(),theme:'orange'}}
 function defaultSecurity(){return {lockEnabled:false,pin:''}}
@@ -113,18 +113,9 @@ function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
 function fmt(ts){const d=new Date(ts);const t=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});return t+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 
-// LOGIKA MATEMATIS NET BALANCE: Positive = Saldo, Negative = Hutang
-function getNetBalance(p){
-  return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0);
-}
-function sumDebt(p){
-  const net = getNetBalance(p);
-  return net < 0 ? -net : 0;
-}
-function getSaldo(p){
-  const net = getNetBalance(p);
-  return net > 0 ? net : 0;
-}
+function getNetBalance(p){ return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0); }
+function sumDebt(p){ const net = getNetBalance(p); return net < 0 ? -net : 0; }
+function getSaldo(p){ const net = getNetBalance(p); return net > 0 ? net : 0; }
 
 function outstandingLots(p){const lots=[];for(const t of (p.trx||[]).sort((a,b)=>a.ts-b.ts)){if(t.type==='loan') lots.push({ts:t.ts,remain:t.amount}); else {let pay=t.amount; for(const lot of lots){if(pay<=0) break; const used=Math.min(pay,lot.remain); lot.remain-=used; pay-=used;}}}return lots.filter(x=>x.remain>0)}
 function oldestOutstandingTs(p){const lots=outstandingLots(p);return lots.length?Math.min(...lots.map(x=>x.ts)):Infinity}
@@ -144,17 +135,29 @@ function openModal(id){document.getElementById(id).classList.add('open');documen
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
 for(const id of ['mForm','mDetail','mSettings']) document.getElementById(id).onclick=e=>{if(e.target.id===id) closeModal(id)}
 
+// SINKRONISASI PINTAR (TERMUX & LOCAL STORAGE)
 async function dbGet(key){
     try {
-        const res = await fetch('http://localhost:5000/api/data');
-        if(!res.ok) return null;
-        return await res.json();
-    } catch(e) {
-        return null;
+        const res = await fetch('http://localhost:5000/api/data', { signal: AbortSignal.timeout(1500) });
+        if(res.ok) {
+            const data = await res.json();
+            isTermuxOnline = true;
+            localStorage.setItem('bonsekolah_cache', JSON.stringify(data)); // Simpan cadangan di HP
+            return data;
+        }
+    } catch(e) {}
+    
+    // Jika Termux Mati, ambil dari Cadangan HP!
+    isTermuxOnline = false;
+    const localData = localStorage.getItem('bonsekolah_cache');
+    if(localData) {
+        try { return JSON.parse(localData); } catch(e){}
     }
+    return null;
 }
 
 async function dbSet(key,val){
+    localStorage.setItem('bonsekolah_cache', JSON.stringify(val)); // Simpan di HP dulu
     try {
         await fetch('http://localhost:5000/api/data', {
             method: 'POST',
@@ -162,16 +165,35 @@ async function dbSet(key,val){
             body: JSON.stringify(val)
         });
     } catch(e) {
-        toast("Gagal sinkron dengan AI (Server Termux mati)");
+        toast("Offline: Tersimpan di memori HP (Termux mati)");
     }
 }
 
 function normalizeImported(parsed){const base=defaultState(); const s=parsed.settings||{}; const sec=parsed.security||{}; const classesRaw=s.classes||parsed.classes||base.settings.classes; const classes=Array.isArray(classesRaw)?classesRaw.filter(Boolean):String(classesRaw||'').split(/[\n,]/).map(x=>x.trim()).filter(Boolean); return {settings:{shopName:s.shopName||base.settings.shopName,limit:Math.max(1000,Number(s.limit||base.settings.limit)),classes:classes.length?classes:base.settings.classes,theme:s.theme||base.settings.theme},security:{lockEnabled:!!sec.lockEnabled,pin:String(sec.pin||'')},items:Array.isArray(parsed.items)?parsed.items:[],meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}}
 async function loadState(){try{const saved=await dbGet(STATE_KEY); state=saved?normalizeImported(saved):defaultState(); settings=state.settings; security=state.security; rows=Array.isArray(state.items)?state.items:[];}catch(e){console.error(e); state=defaultState(); settings=state.settings; security=state.security; rows=[];} syncSettingsUI(); populateClassSelects(); applyBrand(); render(); initLock()}
 async function saveState(){state={settings,security,items:rows,meta:{app:'BonSekolah by MZW Digital',version:5,updatedAt:Date.now()}}; await dbSet(STATE_KEY,state)}
-async function persist(msg='Tersimpan otomatis'){await saveState();applyBrand();render(); if(msg) toast(msg)}
+async function persist(msg='Tersimpan'){await saveState();applyBrand();render(); if(msg) toast(msg)}
 function applyTheme(){const m={orange:['#c96b00','#a55600'],blue:['#2265d8','#184ba1'],green:['#2e8b57','#20633d'],purple:['#8257d7','#6240ab']}[settings.theme||'orange']; document.documentElement.style.setProperty('--pri',m[0]); document.documentElement.style.setProperty('--pri2',m[1])}
-function applyBrand(){applyTheme(); document.title='BonSekolah by MZW Digital'; document.getElementById('shopTitle').textContent=settings.shopName||'Warung Sekolah'; document.getElementById('lockSub').textContent='Masukkan PIN untuk membuka '+(settings.shopName||'aplikasi')}
+
+function applyBrand(){
+  applyTheme(); 
+  document.title='BonSekolah by MZW Digital'; 
+  document.getElementById('shopTitle').textContent=settings.shopName||'Warung Sekolah'; 
+  document.getElementById('lockSub').textContent='Masukkan PIN untuk membuka '+(settings.shopName||'aplikasi');
+  
+  const box = document.getElementById('statusBox');
+  const txt = document.getElementById('statusText');
+  if(isTermuxOnline) {
+    box.style.background = '#eaf7ee';
+    box.style.borderColor = '#cae7d5';
+    box.innerHTML = '<strong>Terhubung ke AI Termux</strong><div class="mini" style="color:#15803d">Data tersinkronisasi otomatis dengan AI lokal.</div>';
+  } else {
+    box.style.background = '#fff4e5';
+    box.style.borderColor = '#ffe1bc';
+    box.innerHTML = '<strong>Mode Offline (Termux Tidak Aktif)</strong><div class="mini" style="color:#b45309">Menampilkan data cadangan terakhir di HP.</div>';
+  }
+}
+
 function populateClassSelects(){const classes=(settings.classes||defaultClasses()).filter(Boolean); document.getElementById('kelas').innerHTML='<option value="">Pilih</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join(''); document.getElementById('kelasFilter').innerHTML='<option value="">Semua kelas</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join('')}
 function syncSettingsUI(){document.getElementById('setShopName').value=settings.shopName||''; document.getElementById('setLimit').value=currentLimit(); document.getElementById('setClasses').value=(settings.classes||defaultClasses()).join('\n'); document.getElementById('setTheme').value=settings.theme||'orange'; document.getElementById('setPin').value=''; document.getElementById('setPin2').value=''; document.getElementById('setLockEnabled').value=security.lockEnabled?'yes':'no'}
 function filtered(){const q=document.getElementById('q').value.toLowerCase().trim(); const k=document.getElementById('kelasFilter').value; return rows.filter(r=>(!q||r.name.toLowerCase().includes(q))&&(!k||r.className===k)).sort((a,b)=>{const da=sumDebt(a), db=sumDebt(b); if(da>0&&db>0) return oldestOutstandingTs(a)-oldestOutstandingTs(b); if(da>0&&db<=0) return -1; if(da<=0&&db>0) return 1; const la=(a.trx&&a.trx.length)?Math.max(...a.trx.map(t=>t.ts)):a.createdAt; const lb=(b.trx&&b.trx.length)?Math.max(...b.trx.map(t=>t.ts)):b.createdAt; return lb-la})}
