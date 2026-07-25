@@ -75,7 +75,7 @@ button,input,select,textarea{font:inherit;color:inherit}img{max-width:100%;displ
     <div class="card stat"><div class="sl">Total piutang</div><div class="sv" id="s4">Rp 0</div></div>
   </div>
   <div class="bar"><div class="search"><input class="input" id="q" placeholder="Cari nama siswa..." oninput="render()"></div><div style="width:180px"><select class="sel" id="kelasFilter" onchange="render()"></select></div></div>
-  <div class="card" style="padding:.8rem .9rem;margin-bottom:.75rem"><div style="font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Daftar peminjam</div><div class="small" style="margin-top:.18rem">Urut otomatis berdasarkan status hutang dan aktivitas terbaru.</div></div><div id="list" class="list"></div>
+  <div class="card" style="padding:.8rem .9rem;margin-bottom:.75rem"><div style="font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Daftar peminjam</div><div class="small" style="margin-top:.18rem">Urut otomatis berdasarkan status hutang/saldo dan aktivitas terbaru.</div></div><div id="list" class="list"></div>
   <div class="footer">📒 BonSekolah &nbsp;·&nbsp; by <a href="https://t.me/mzwdigital" target="_blank" rel="noopener">MZW Digital</a></div>
 </main>
 </div>
@@ -112,24 +112,44 @@ function esc(s){return String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&l
 function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
 function fmt(ts){const d=new Date(ts);const t=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});return t+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function sumDebt(p){return (p.trx||[]).reduce((s,t)=>s+(t.type==='loan'?t.amount:-t.amount),0)}
+
+// LOGIKA MATEMATIS NET BALANCE: Positive = Saldo, Negative = Hutang
+function getNetBalance(p){
+  return (p.trx||[]).reduce((s,t)=>s+(t.type==='pay'?t.amount:-t.amount),0);
+}
+function sumDebt(p){
+  const net = getNetBalance(p);
+  return net < 0 ? -net : 0;
+}
+function getSaldo(p){
+  const net = getNetBalance(p);
+  return net > 0 ? net : 0;
+}
+
 function outstandingLots(p){const lots=[];for(const t of (p.trx||[]).sort((a,b)=>a.ts-b.ts)){if(t.type==='loan') lots.push({ts:t.ts,remain:t.amount}); else {let pay=t.amount; for(const lot of lots){if(pay<=0) break; const used=Math.min(pay,lot.remain); lot.remain-=used; pay-=used;}}}return lots.filter(x=>x.remain>0)}
 function oldestOutstandingTs(p){const lots=outstandingLots(p);return lots.length?Math.min(...lots.map(x=>x.ts)):Infinity}
-function statusOf(p){const debt=sumDebt(p);if(debt<=0) return {c:'cg',p:'sg',f:'var(--ok)',text:'Lunas'};const oldest=outstandingLots(p)[0];const days=Math.floor((Date.now()-oldest.ts)/86400000);if(days<3) return {c:'cb',p:'sb',f:'var(--bl)',text:days===0?'Hari ini':'1-2 hari'};if(days<6) return {c:'co',p:'so',f:'var(--or)',text:'3-5 hari'};return {c:'cr',p:'sr',f:'var(--er)',text:'6+ hari'}}
+function statusOf(p){
+  const net = getNetBalance(p);
+  if(net > 0) return {c:'cb',p:'sb',f:'var(--bl)',text:'Saldo Ada'};
+  if(net === 0) return {c:'cg',p:'sg',f:'var(--ok)',text:'Lunas'};
+  const oldest=outstandingLots(p)[0];
+  const days=Math.floor((Date.now()-(oldest?oldest.ts:Date.now()))/86400000);
+  if(days<3) return {c:'cb',p:'sb',f:'var(--bl)',text:days===0?'Hari ini':'1-2 hari'};
+  if(days<6) return {c:'co',p:'so',f:'var(--or)',text:'3-5 hari'};
+  return {c:'cr',p:'sr',f:'var(--er)',text:'6+ hari'};
+}
 function currentLimit(){return Math.max(1000,Number(settings.limit||5000))}
 function transactionsToday(){const start=new Date(); start.setHours(0,0,0,0); let n=0; for(const p of rows){for(const t of (p.trx||[])){if(t.ts>=start.getTime()) n++}} return n}
 function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
 for(const id of ['mForm','mDetail','mSettings']) document.getElementById(id).onclick=e=>{if(e.target.id===id) closeModal(id)}
 
-// Koneksi Langsung ke Server AI Python di Termux (Local API Bridge)
 async function dbGet(key){
     try {
         const res = await fetch('http://localhost:5000/api/data');
         if(!res.ok) return null;
         return await res.json();
     } catch(e) {
-        console.warn("AI Offline / Tidak Terhubung");
         return null;
     }
 }
@@ -155,7 +175,32 @@ function applyBrand(){applyTheme(); document.title='BonSekolah by MZW Digital'; 
 function populateClassSelects(){const classes=(settings.classes||defaultClasses()).filter(Boolean); document.getElementById('kelas').innerHTML='<option value="">Pilih</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join(''); document.getElementById('kelasFilter').innerHTML='<option value="">Semua kelas</option>'+classes.map(c=>`<option>${esc(c)}</option>`).join('')}
 function syncSettingsUI(){document.getElementById('setShopName').value=settings.shopName||''; document.getElementById('setLimit').value=currentLimit(); document.getElementById('setClasses').value=(settings.classes||defaultClasses()).join('\n'); document.getElementById('setTheme').value=settings.theme||'orange'; document.getElementById('setPin').value=''; document.getElementById('setPin2').value=''; document.getElementById('setLockEnabled').value=security.lockEnabled?'yes':'no'}
 function filtered(){const q=document.getElementById('q').value.toLowerCase().trim(); const k=document.getElementById('kelasFilter').value; return rows.filter(r=>(!q||r.name.toLowerCase().includes(q))&&(!k||r.className===k)).sort((a,b)=>{const da=sumDebt(a), db=sumDebt(b); if(da>0&&db>0) return oldestOutstandingTs(a)-oldestOutstandingTs(b); if(da>0&&db<=0) return -1; if(da<=0&&db>0) return 1; const la=(a.trx&&a.trx.length)?Math.max(...a.trx.map(t=>t.ts)):a.createdAt; const lb=(b.trx&&b.trx.length)?Math.max(...b.trx.map(t=>t.ts)):b.createdAt; return lb-la})}
-function render(){applyBrand(); document.getElementById('s1').textContent=rows.length; document.getElementById('s2').textContent=rows.filter(x=>sumDebt(x)>0).length; document.getElementById('s3').textContent=transactionsToday(); document.getElementById('s4').textContent=rp(rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0)); const list=document.getElementById('list'); const items=filtered(); if(!rows.length){list.innerHTML='<div class="card empty">Belum ada data. Tekan + Tambah Data. Data akan tersimpan otomatis.</div>'; return} if(!items.length){list.innerHTML='<div class="card empty">Data tidak ditemukan.</div>'; return} const limit=currentLimit(); list.innerHTML=items.map(p=>{const debt=sumDebt(p), pct=Math.min(100,Math.round(debt/limit*100)), st=statusOf(p); const last=[...(p.trx||[])].sort((a,b)=>b.ts-a.ts)[0]; const lastText=last?(last.type==='loan'?last.item:'Bayar')+' · '+rp(last.amount)+' · '+fmt(last.ts):'Belum ada transaksi'; return `<div class="card item ${st.c}"><button class="itembtn" onclick="openDetail('${p.id}')"><div class="itemin"><div class="ph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="last">${esc(lastText)}</div><div class="prog"><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div><div class="amt" style="color:${st.f}">${debt>0?rp(debt):'Lunas'}</div></div></div></div></button></div>`}).join('')}
+
+function render(){
+  applyBrand(); 
+  document.getElementById('s1').textContent=rows.length; 
+  document.getElementById('s2').textContent=rows.filter(x=>sumDebt(x)>0).length; 
+  document.getElementById('s3').textContent=transactionsToday(); 
+  document.getElementById('s4').textContent=rp(rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0)); 
+  const list=document.getElementById('list'); 
+  const items=filtered(); 
+  if(!rows.length){list.innerHTML='<div class="card empty">Belum ada data. Tekan + Tambah Data. Data akan tersimpan otomatis.</div>'; return} 
+  if(!items.length){list.innerHTML='<div class="card empty">Data tidak ditemukan.</div>'; return} 
+  const limit=currentLimit(); 
+  list.innerHTML=items.map(p=>{
+    const debt=sumDebt(p), saldo=getSaldo(p), st=statusOf(p); 
+    const pct=Math.min(100,Math.round(debt/limit*100)); 
+    const last=[...(p.trx||[])].sort((a,b)=>b.ts-a.ts)[0]; 
+    const lastText=last?(last.type==='loan'?last.item:'Bayar/Setor')+' · '+rp(last.amount)+' · '+fmt(last.ts):'Belum ada transaksi'; 
+    
+    let amtLabel = 'Lunas';
+    if(debt > 0) amtLabel = rp(debt);
+    else if(saldo > 0) amtLabel = 'Saldo: '+rp(saldo);
+
+    return `<div class="card item ${st.c}"><button class="itembtn" onclick="openDetail('${p.id}')"><div class="itemin"><div class="ph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="last">${esc(lastText)}</div><div class="prog"><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div><div class="amt" style="color:${st.f}">${amtLabel}</div></div></div></div></button></div>`
+  }).join('')
+}
+
 function findDuplicate(name,className,ignoreId=''){return rows.find(x=>x.id!==ignoreId && x.name.trim().toLowerCase()===name.trim().toLowerCase() && x.className===className)}
 function openAdd(){editingId=null; currentPhoto=null; document.getElementById('formTitle').textContent='Tambah Data'; document.getElementById('formMain').reset(); document.getElementById('fotoPrev').classList.add('hidden'); document.getElementById('firstLoanBlock').style.display='block'; openModal('mForm')}
 function openEdit(id){const p=rows.find(x=>x.id===id); if(!p) return; editingId=id; currentPhoto=p.photo||null; document.getElementById('formTitle').textContent='Edit Peminjam'; document.getElementById('nama').value=p.name; document.getElementById('kelas').value=p.className; document.getElementById('barang').value=''; document.getElementById('harga').value=''; document.getElementById('firstLoanBlock').style.display='none'; const prev=document.getElementById('fotoPrev'); if(p.photo){prev.src=p.photo; prev.classList.remove('hidden')} else prev.classList.add('hidden'); openModal('mForm')}
@@ -167,10 +212,19 @@ document.getElementById('fotoCamera').addEventListener('change',handlePhotoInput
 document.getElementById('formMain').addEventListener('submit',async e=>{e.preventDefault(); try{const name=document.getElementById('nama').value.trim(); const className=document.getElementById('kelas').value; const item=document.getElementById('barang').value.trim(); const amount=Number(document.getElementById('harga').value||0); const limit=currentLimit(); if(!name||!className) return toast('Nama dan kelas wajib'); const dup=findDuplicate(name,className,editingId||''); if(dup && !confirm('Nama dan kelas ini sudah ada. Lanjut simpan?')) return; if(editingId){const p=rows.find(x=>x.id===editingId); if(!p) return; p.name=name; p.className=className; p.photo=currentPhoto||null; await persist('Data diperbarui')} else {if(!item||amount<=0||amount>limit) return toast('Pinjaman awal wajib dan tidak boleh melebihi limit'); rows.push({id:uid(),name,className,photo:currentPhoto||null,createdAt:Date.now(),trx:[{id:uid(),type:'loan',item,amount,ts:Date.now()}]}); await persist('Data ditambah')} closeModal('mForm')}catch(err){console.error(err); toast('Gagal menyimpan')}})
 document.getElementById('settingsForm').addEventListener('submit',async e=>{e.preventDefault(); const raw=document.getElementById('setClasses').value; const classes=raw.split(/[\n,]/).map(x=>x.trim()).filter(Boolean); const p1=document.getElementById('setPin').value.trim(); const p2=document.getElementById('setPin2').value.trim(); const lockEnabled=document.getElementById('setLockEnabled').value==='yes'; if(lockEnabled){ if(!(p1.length===4||p1.length===6)||!/^[0-9]+$/.test(p1)) return toast('PIN harus 4 atau 6 digit'); if(p1!==p2) return toast('Ulangi PIN tidak sama'); security.pin=p1 } else if(p1||p2){ if(p1!==p2) return toast('Ulangi PIN tidak sama'); if(p1 && !/^[0-9]+$/.test(p1)) return toast('PIN hanya angka'); if(p1 && !(p1.length===4||p1.length===6)) return toast('PIN harus 4 atau 6 digit'); if(p1) security.pin=p1 } security.lockEnabled=lockEnabled; settings={shopName:document.getElementById('setShopName').value.trim()||'Warung Sekolah',limit:Math.max(1000,Number(document.getElementById('setLimit').value||5000)),classes:classes.length?classes:defaultClasses(),theme:document.getElementById('setTheme').value||'orange'}; populateClassSelects(); unlocked=!lockEnabled; await persist('Pengaturan disimpan'); closeModal('mSettings'); initLock()})
 document.getElementById('presetClasses').addEventListener('change',e=>{const v=e.target.value; if(v==='sd') document.getElementById('setClasses').value=['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B','Lainnya'].join('\n'); if(v==='smp') document.getElementById('setClasses').value=['7A','7B','7C','8A','8B','8C','9A','9B','9C','Lainnya'].join('\n'); if(v==='sma') document.getElementById('setClasses').value=['10 IPA','10 IPS','11 IPA','11 IPS','12 IPA','12 IPS','Lainnya'].join('\n')})
-function detailHtml(p){const debt=sumDebt(p), limit=currentLimit(), remain=Math.max(0,limit-debt), pct=Math.min(100,Math.round(debt/limit*100)), st=statusOf(p); const sorted=[...(p.trx||[])].sort((a,b)=>a.ts-b.ts); let run=0; const tr=sorted.map(t=>{run+=t.type==='loan'?t.amount:-t.amount; return `<tr><td>${fmt(t.ts)}</td><td>${t.type==='loan'?esc(t.item):'-'}</td><td class="${t.type==='loan'?'tp':'tb'}">${t.type==='loan'?'-':'+'}${rp(t.amount)}</td><td>${rp(Math.max(0,run))}</td></tr>`}).join(''); return `<div class="handle"></div><div class="mh">Detail Peminjam</div><div class="detailhead"><div class="bigph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="hint">Mulai tercatat: ${fmt(p.createdAt)}</div></div></div><div class="card limit"><div class="limitline"><span>Hutang: ${rp(debt)}</span><span>Sisa limit: ${rp(remain)}</span></div><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div></div><div class="paybox"><input id="payAmount" class="input" type="number" min="1" placeholder="Nominal bayar"><button class="btn bp" onclick="payDebt()">Bayar</button></div><div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:.9rem"><button class="btn bp" onclick="addLoan()" ${remain<=0?'disabled':''}>Tambah pinjaman</button><button class="btn bg" onclick="openEdit('${p.id}')">Edit</button><button class="btn bd" onclick="removePerson('${p.id}')">Hapus</button></div><table class="tbl"><thead><tr><th>Tanggal</th><th>Barang</th><th>Jumlah</th><th>Sisa</th></tr></thead><tbody>${tr||'<tr><td colspan="4">Belum ada transaksi</td></tr>'}</tbody></table>`}
+
+function detailHtml(p){
+  const debt=sumDebt(p), saldo=getSaldo(p), limit=currentLimit(), remain=Math.max(0,limit-debt), pct=Math.min(100,Math.round(debt/limit*100)), st=statusOf(p); 
+  const sorted=[...(p.trx||[])].sort((a,b)=>a.ts-b.ts); 
+  let run=0; 
+  const tr=sorted.map(t=>{run+=t.type==='loan'?-t.amount:t.amount; return `<tr><td>${fmt(t.ts)}</td><td>${t.type==='loan'?esc(t.item):'Bayar/Setor'}</td><td class="${t.type==='loan'?'tp':'tb'}">${t.type==='loan'?'-':'+'}${rp(t.amount)}</td><td>${run>0?'Saldo '+rp(run):'Hutang '+rp(-run)}</td></tr>`}).join(''); 
+  
+  return `<div class="handle"></div><div class="mh">Detail Peminjam</div><div class="detailhead"><div class="bigph">${p.photo?`<img src="${p.photo}" alt="${esc(p.name)}">`:'🙂'}</div><div><div class="nm">${esc(p.name)}</div><div class="meta"><span class="pill pk">${esc(p.className)}</span><span class="pill ${st.p}">${st.text}</span></div><div class="hint">Mulai tercatat: ${fmt(p.createdAt)}</div></div></div><div class="card limit"><div class="limitline"><span>${debt>0?'Hutang: '+rp(debt):'Saldo: '+rp(saldo)}</span><span>Sisa limit: ${rp(remain)}</span></div><div class="track"><div class="fill" style="width:${pct}%;background:${st.f}"></div></div></div><div class="paybox"><input id="payAmount" class="input" type="number" min="1" placeholder="Nominal bayar / setor"><button class="btn bp" onclick="payDebt()">Bayar/Setor</button></div><div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:.9rem"><button class="btn bp" onclick="addLoan()">Tambah pinjaman</button><button class="btn bg" onclick="openEdit('${p.id}')">Edit</button><button class="btn bd" onclick="removePerson('${p.id}')">Hapus</button></div><table class="tbl"><thead><tr><th>Tanggal</th><th>Barang</th><th>Jumlah</th><th>Status Total</th></tr></thead><tbody>${tr||'<tr><td colspan="4">Belum ada transaksi</td></tr>'}</tbody></table>`
+}
+
 function openDetail(id){currentId=id; const p=rows.find(x=>x.id===id); if(!p) return; document.getElementById('detailBody').innerHTML=detailHtml(p); openModal('mDetail')}
-async function payDebt(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const debt=sumDebt(p); const amount=Number(document.getElementById('payAmount').value||0); if(amount<=0||amount>debt) return toast('Nominal bayar tidak valid'); p.trx.push({id:uid(),type:'pay',item:'-',amount,ts:Date.now()}); await persist('Pembayaran disimpan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
-async function addLoan(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const remain=Math.max(0,currentLimit()-sumDebt(p)); const item=prompt('Nama barang pinjaman'); if(!item) return; const amount=Number(prompt('Harga pinjaman, maks '+remain)||0); if(amount<=0||amount>remain) return toast('Melebihi sisa limit'); p.trx.push({id:uid(),type:'loan',item:item.trim(),amount,ts:Date.now()}); await persist('Pinjaman ditambahkan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
+async function payDebt(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const amount=Number(document.getElementById('payAmount').value||0); if(amount<=0) return toast('Nominal tidak valid'); p.trx.push({id:uid(),type:'pay',item:'-',amount,ts:Date.now()}); await persist('Pembayaran/Setoran disimpan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
+async function addLoan(){try{const p=rows.find(x=>x.id===currentId); if(!p) return; const item=prompt('Nama barang pinjaman'); if(!item) return; const amount=Number(prompt('Harga pinjaman')||0); if(amount<=0) return toast('Nominal tidak valid'); p.trx.push({id:uid(),type:'loan',item:item.trim(),amount,ts:Date.now()}); await persist('Pinjaman ditambahkan'); openDetail(currentId)}catch(err){console.error(err); toast('Gagal menyimpan')}}
 async function removePerson(id){try{if(!confirm('Hapus data ini?')) return; rows=rows.filter(x=>x.id!==id); await persist('Data dihapus'); closeModal('mDetail')}catch(err){console.error(err); toast('Gagal menyimpan')}}
 function buildSummaryText(){const total=rows.reduce((s,x)=>s+Math.max(0,sumDebt(x)),0); const unpaid=rows.filter(x=>sumDebt(x)>0).length; return `BonSekolah by MZW Digital\n${settings.shopName||'Warung Sekolah'}\n\nTotal anak: ${rows.length}\nBelum lunas: ${unpaid}\nAktivitas hari ini: ${transactionsToday()}\nTotal piutang: ${rp(total)}`}
 function shareSummary(){const txt=buildSummaryText(); if(navigator.share){navigator.share({title:'BonSekolah by MZW Digital',text:txt}).catch(()=>{window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')})} else {window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank')} }
